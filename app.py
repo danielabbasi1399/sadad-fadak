@@ -3,12 +3,11 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# تنظیمات اصلی
+# تنظیمات ظاهری
 st.set_page_config(page_title="سداد فدک", page_icon="🌶️", layout="wide")
 
 st.title("ثبت برداشت روزانه - سداد فدک")
 
-# اتصال به گوگل شیت
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # خواندن داده‌ها
@@ -24,10 +23,10 @@ except Exception:
     ]
     existing_data = pd.DataFrame(columns=columns)
 
-# تابع کمکی برای تبدیل متن به عدد (برای محاسبات آنی)
-def get_num(val):
+# تابع کمکی برای محاسبات آنی
+def get_val(v):
     try:
-        return float(val) if val.strip() else 0.0
+        return float(v) if v.strip() else 0.0
     except:
         return 0.0
 
@@ -54,78 +53,73 @@ except ValueError:
 
 st.divider()
 
-# --- فرم ثبت اطلاعات با نمایش جمع کل ---
-with st.form(key="total_sum_form"):
+# --- فرم ثبت با نمایش جمع آنی هر بذر ---
+with st.form(key="final_form_with_totals"):
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.error("🏘️ گلخانه ۱")
-        st.markdown("---")
-        st.markdown("**اندرومدا**")
+        st.markdown("**بذر اندرومدا**")
         s1_an = st.text_input("سوپر", key="s1an", value="")
         g1_an = st.text_input("درجه", key="g1an", value="")
-        # نمایش جمع (در لحظه ثبت محاسبه می‌شود)
         st.markdown("---")
-        st.markdown("**راگاراک**")
+        st.markdown("**بذر راگاراک**")
         s1_ra = st.text_input("سوپر", key="s1ra", value="")
         g1_ra = st.text_input("درجه", key="g1ra", value="")
 
     with col2:
         st.info("🏘️ گلخانه ۲")
-        st.markdown("---")
-        st.markdown("**اندرومدا**")
+        st.markdown("**بذر اندرومدا**")
         s2_an = st.text_input("سوپر", key="s2an", value="")
         g2_an = st.text_input("درجه", key="g2an", value="")
         st.markdown("---")
-        st.markdown("**G20**")
+        st.markdown("**بذر G20**")
         s2_g2 = st.text_input("سوپر", key="s2g2", value="")
         g2_g2 = st.text_input("درجه", key="g2g2", value="")
 
     with col3:
         st.success("🏘️ گلخانه ۳")
-        st.markdown("---")
-        st.markdown("**نیروین**")
+        st.markdown("**بذر نیروین**")
         s3_ni = st.text_input("سوپر", key="s3ni", value="")
         g3_ni = st.text_input("درجه", key="g3ni", value="")
+        st.markdown("---")
+        st.caption("برداشت گلخانه ۳")
 
-    st.markdown("---")
-    submitted = st.form_submit_button("🚀 ثبت نهایی اطلاعات در اکسل")
+    submitted = st.form_submit_button("🚀 ثبت نهایی و محاسبه جمع کل")
 
-# پردازش و ذخیره
+# عملیات ذخیره و نمایش جمع کل
 if submitted and current_day:
-    # مقادیر عددی
-    v1_an_s = get_num(s1_an); v1_an_g = get_num(g1_an)
-    v1_ra_s = get_num(s1_ra); v1_ra_g = get_num(g1_ra)
-    v2_an_s = get_num(s2_an); v2_an_g = get_num(g2_an)
-    v2_g2_s = get_num(s2_g2); v2_g2_g = get_num(g2_g2)
-    v3_ni_s = get_num(s3_ni); v3_ni_g = get_num(g3_ni)
+    # مقادیر عددی برای محاسبه جمع
+    v1an = get_val(s1_an) + get_val(g1_an)
+    v1ra = get_val(s1_ra) + get_val(g1_ra)
+    v2an = get_val(s2_an) + get_val(g2_an)
+    v2g2 = get_val(s2_g2) + get_val(g2_g2)
+    v3ni = get_val(s3_ni) + get_val(g3_ni)
 
-    # نمایش جمع کل هر بذر در پیام موفقیت
-    total_1_an = v1_an_s + v1_an_g
-    total_1_ra = v1_ra_s + v1_ra_g
-    total_2_an = v2_an_s + v2_an_g
-    total_2_g2 = v2_g2_s + v2_g2_g
-    total_3_ni = v3_ni_s + v3_ni_g
-
-    new_data = pd.DataFrame([{
+    new_row = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
-        "اندرومدا ۱ (S)": v1_an_s, "اندرومدا ۱ (G)": v1_an_g,
-        "راگاراک ۱ (S)": v1_ra_s, "راگاراک ۱ (G)": v1_ra_g,
-        "اندرومدا ۲ (S)": v2_an_s, "اندرومدا ۲ (G)": v2_an_g,
-        "G20 2 (S)": v2_g2_s, "G20 2 (G)": v2_g2_g,
-        "نیروین ۳ (S)": v3_ni_s, "نیروین ۳ (G)": v3_ni_g
+        "اندرومدا ۱ (S)": get_val(s1_an), "اندرومدا ۱ (G)": get_val(g1_an),
+        "راگاراک ۱ (S)": get_val(s1_ra), "راگاراک ۱ (G)": get_val(g1_ra),
+        "اندرومدا ۲ (S)": get_val(s2_an), "اندرومدا ۲ (G)": get_val(g2_an),
+        "G20 2 (S)": get_val(s2_g2), "G20 2 (G)": get_val(g2_g2),
+        "نیروین ۳ (S)": get_val(s3_ni), "نیروین ۳ (G)": get_val(g3_ni)
     }])
     
     try:
-        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
+        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
         st.balloons()
-        # نمایش گزارش کوتاه به کاربر
-        st.success(f"✅ ثبت شد! جمع اندرومدا ۱: {total_1_an} | راگاراک ۱: {total_1_ra} | بقیه موارد نیز ثبت شدند.")
+        # نمایش جمع‌های کل در کادر سبز نهایی
+        st.success(f"✅ اطلاعات با موفقیت ثبت شد.")
+        st.write(f"📊 **خلاصه برداشت امروز:**")
+        st.write(f"گلخانه ۱: (اندرومدا: {v1an}) - (راگاراک: {v1ra})")
+        st.write(f"گلخانه ۲: (اندرومدا: {v2an}) - (G20: {v2g2})")
+        st.write(f"گلخانه ۳: (نیروین: {v3ni})")
+        
         st.cache_data.clear()
-        st.rerun()
+        # برای مشاهده نتایج توسط کاربر، rerun را کمی با تاخیر یا دستی انجام می‌دهیم
     except Exception as e:
-        st.error(f"خطا: {e}")
+        st.error(f"خطا در ثبت: {e}")
 
 st.divider()
 st.dataframe(existing_data, use_container_width=True)
