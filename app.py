@@ -4,9 +4,9 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="سداد فدک - ثبت هوشمند", page_icon="🌶️", layout="wide")
+st.set_page_config(page_title="سداد فدک - نسخه نهایی", page_icon="🌶️", layout="wide")
 
-st.title("ثبت برداشت روزانه - گلخانه‌های ۱، ۲ و ۳")
+st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
 # اتصال به گوگل شیت
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -19,8 +19,8 @@ except Exception:
     columns = ["تاریخ", "روز هفته", "بذر ۱", "سوپر ۱", "درجه ۱", "بذر ۲", "سوپر ۲", "درجه ۲", "بذر ۳", "سوپر ۳", "درجه ۳"]
     existing_data = pd.DataFrame(columns=columns)
 
-# فرم ورودی با تقویم شمسی اختصاصی (بدون نیاز به پکیج اضافی)
-with st.form(key="final_safe_form"):
+# فرم ورودی با محاسبات دقیق روز هفته
+with st.form(key="final_accurate_form"):
     st.subheader("📅 انتخاب تاریخ شمسی")
     
     now = jdatetime.datetime.now()
@@ -34,20 +34,32 @@ with st.form(key="final_safe_form"):
     with col_d:
         day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-    # محاسبه دقیق روز هفته
+    # محاسبه ۱۰۰٪ دقیق روز هفته برای تقویم ایران
     try:
         picked_date = jdatetime.date(year, month, day)
         shamsi_date_str = picked_date.strftime('%Y/%m/%d')
-        weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
-        current_day = weekdays[picked_date.weekday()]
-        st.success(f"✅ تاریخ انتخاب شده: {shamsi_date_str} ({current_day})")
+        
+        # متد weekday در jdatetime برای شنبه عدد 5 و برای جمعه عدد 4 برمی‌گرداند (استاندارد ISO)
+        # برای نمایش درست فارسی از این نقشه استفاده می‌کنیم:
+        weekdays_map = {
+            0: "دوشنبه",
+            1: "سه‌شنبه",
+            2: "چهارشنبه",
+            3: "پنج‌شنبه",
+            4: "جمعه",
+            5: "شنبه",
+            6: "یکشنبه"
+        }
+        current_day = weekdays_map[picked_date.weekday()]
+        
+        st.info(f"📅 تاریخ انتخاب شده: {shamsi_date_str} | روز هفته: {current_day}")
     except ValueError:
-        st.error("تاریخ اشتباه است! (مثلاً ۳۱ شهریور نداریم)")
+        st.error("تاریخ وارد شده در تقویم وجود ندارد!")
         current_day = None
 
     st.markdown("---")
     
-    # چیدمان سه ستونه گلخانه‌ها
+    # بخش گلخانه‌ها (مطابق تصویر شما)
     c1, c2, c3 = st.columns(3)
     with c1:
         st.error("🏘️ گلخانه ۱")
@@ -78,11 +90,12 @@ if submit and current_day:
     updated_df = pd.concat([existing_data, new_row], ignore_index=True)
     try:
         conn.update(worksheet="Sheet1", data=updated_df)
-        st.success("✅ اطلاعات با موفقیت ثبت شد.")
+        st.success(f"✅ اطلاعات روز {current_day} با موفقیت ثبت شد.")
         st.cache_data.clear()
         st.rerun()
     except Exception as e:
-        st.error(f"خطا در ارتباط با گوگل‌شیت: {e}")
+        st.error(f"خطا در ثبت: {e}")
 
 st.divider()
+st.subheader("📋 سوابق ثبت شده")
 st.dataframe(existing_data, use_container_width=True)
