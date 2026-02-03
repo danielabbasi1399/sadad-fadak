@@ -3,3 +3,4 @@ pandas
 arabic-reshaper
 python-bidi
 st-gsheets-connection
+jdatetime
