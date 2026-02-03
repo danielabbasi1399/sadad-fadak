@@ -4,7 +4,7 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="سداد فدک - دقت ۱۰۰٪", page_icon="🌶️", layout="wide")
+st.set_page_config(page_title="سداد فدک - ورودی خالی", page_icon="🌶️", layout="wide")
 
 st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
@@ -32,72 +32,48 @@ with col_m:
 with col_d:
     day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-# محاسبه ۱۰۰٪ دقیق روز هفته (روش تبدیل به میلادی و استخراج نام روز)
+# محاسبه ۱۰۰٪ دقیق روز هفته
 try:
-    # ساخت شیء تاریخ شمسی
     picked_date = jdatetime.date(year, month, day)
     shamsi_date_str = picked_date.strftime('%Y/%m/%d')
-    
-    # تبدیل به میلادی برای گرفتن روز هفته دقیق جهانی
     gregorian_date = picked_date.togregorian()
-    
-    # نام روزهای هفته به فارسی (دوشنبه در پایتون 0 است)
-    weekdays_farsi = {
-        0: "دوشنبه",
-        1: "سه‌شنبه",
-        2: "چهارشنبه",
-        3: "پنج‌شنبه",
-        4: "جمعه",
-        5: "شنبه",
-        6: "یکشنبه"
-    }
-    
-    # استخراج روز هفته از تاریخ میلادی معادل
+    weekdays_farsi = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه", 3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
     current_day = weekdays_farsi[gregorian_date.weekday()]
-    
     st.success(f"✅ تاریخ انتخاب شده: {shamsi_date_str} | روز هفته: {current_day}")
 except ValueError:
-    st.error("تاریخ اشتباه است! (مثلاً ۳۱ شهریور نداریم)")
+    st.error("تاریخ اشتباه است!")
     current_day = None
 
 st.markdown("---")
 
-# --- فرم ثبت مقادیر ---
+# --- فرم ثبت مقادیر با کادرهای خالی ---
 with st.form(key="harvest_form"):
     c1, c2, c3 = st.columns(3)
+    
     with c1:
         st.error("🏘️ گلخانه ۱")
         seed1 = st.selectbox("بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
-        s1 = st.number_input("سوپر ۱", min_value=0.0, step=0.1)
-        g1 = st.number_input("درجه ۱", min_value=0.0, step=0.1)
+        # استفاده از text_input به جای number_input برای خالی بودن کادر
+        s1 = st.text_input("وزن سوپر ۱", placeholder="عدد وارد کنید")
+        g1 = st.text_input("وزن درجه ۱", placeholder="عدد وارد کنید")
+
     with c2:
         st.info("🏘️ گلخانه ۲")
         seed2 = st.selectbox("بذر ۲", ["اندرومدا", "G20", "سایر"])
-        s2 = st.number_input("سوپر ۲", min_value=0.0, step=0.1)
-        g2 = st.number_input("درجه ۲", min_value=0.0, step=0.1)
+        s2 = st.text_input("وزن سوپر ۲", placeholder="عدد وارد کنید")
+        g2 = st.text_input("وزن درجه ۲", placeholder="عدد وارد کنید")
+
     with c3:
         st.success("🏘️ گلخانه ۳")
         seed3 = st.selectbox("بذر ۳", ["نیروین", "سایر"])
-        s3 = st.number_input("سوپر ۳", min_value=0.0, step=0.1)
-        g3 = st.number_input("درجه ۳", min_value=0.0, step=0.1)
+        s3 = st.text_input("وزن سوپر ۳", placeholder="عدد وارد کنید")
+        g3 = st.text_input("وزن درجه ۳", placeholder="عدد وارد کنید")
 
     submit = st.form_submit_button(label="📥 ثبت نهایی در اکسل")
 
+# ذخیره اطلاعات
 if submit and current_day:
-    new_row = pd.DataFrame([{
-        "تاریخ": shamsi_date_str, "روز هفته": current_day,
-        "بذر ۱": seed1, "سوپر ۱": s1, "درجه ۱": g1,
-        "بذر ۲": seed2, "سوپر ۲": s2, "درجه ۲": g2,
-        "بذر ۳": seed3, "سوپر ۳": s3, "درجه ۳": g3
-    }])
-    updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-    try:
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.success(f"✅ اطلاعات روز {current_day} با موفقیت ثبت شد.")
-        st.cache_data.clear()
-        st.rerun()
-    except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
-
-st.divider()
-st.dataframe(existing_data, use_container_width=True)
+    # تبدیل متن به عدد (اگر خالی باشد 0 در نظر گرفته می‌شود)
+    def to_float(val):
+        try:
+            return float(val) if val else 0.0
