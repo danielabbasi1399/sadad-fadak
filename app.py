@@ -4,7 +4,7 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="سداد فدک - نسخه نهایی", page_icon="🌶️", layout="wide")
+st.set_page_config(page_title="سداد فدک - ثبت آنی", page_icon="🌶️", layout="wide")
 
 st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
@@ -19,47 +19,36 @@ except Exception:
     columns = ["تاریخ", "روز هفته", "بذر ۱", "سوپر ۱", "درجه ۱", "بذر ۲", "سوپر ۲", "درجه ۲", "بذر ۳", "سوپر ۳", "درجه ۳"]
     existing_data = pd.DataFrame(columns=columns)
 
-# فرم ورودی با محاسبات دقیق روز هفته
-with st.form(key="final_accurate_form"):
-    st.subheader("📅 انتخاب تاریخ شمسی")
-    
-    now = jdatetime.datetime.now()
-    col_y, col_m, col_d = st.columns(3)
-    
-    with col_y:
-        year = st.selectbox("سال", [1403, 1404, 1405], index=1)
-    with col_m:
-        month_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
-        month = st.selectbox("ماه", range(1, 13), format_func=lambda x: month_names[x-1], index=now.month-1)
-    with col_d:
-        day = st.selectbox("روز", range(1, 32), index=now.day-1)
+# --- بخش انتخاب تاریخ (خارج از فرم برای آپدیت آنی) ---
+st.subheader("📅 انتخاب تاریخ شمسی")
+now = jdatetime.datetime.now()
+col_y, col_m, col_d = st.columns(3)
 
-    # محاسبه ۱۰۰٪ دقیق روز هفته برای تقویم ایران
-    try:
-        picked_date = jdatetime.date(year, month, day)
-        shamsi_date_str = picked_date.strftime('%Y/%m/%d')
-        
-        # متد weekday در jdatetime برای شنبه عدد 5 و برای جمعه عدد 4 برمی‌گرداند (استاندارد ISO)
-        # برای نمایش درست فارسی از این نقشه استفاده می‌کنیم:
-        weekdays_map = {
-            0: "دوشنبه",
-            1: "سه‌شنبه",
-            2: "چهارشنبه",
-            3: "پنج‌شنبه",
-            4: "جمعه",
-            5: "شنبه",
-            6: "یکشنبه"
-        }
-        current_day = weekdays_map[picked_date.weekday()]
-        
-        st.info(f"📅 تاریخ انتخاب شده: {shamsi_date_str} | روز هفته: {current_day}")
-    except ValueError:
-        st.error("تاریخ وارد شده در تقویم وجود ندارد!")
-        current_day = None
+with col_y:
+    year = st.selectbox("سال", [1403, 1404, 1405], index=1)
+with col_m:
+    month_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+    month = st.selectbox("ماه", range(1, 13), format_func=lambda x: month_names[x-1], index=now.month-1)
+with col_d:
+    day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-    st.markdown("---")
+# محاسبه آنی و سریع روز هفته
+try:
+    picked_date = jdatetime.date(year, month, day)
+    shamsi_date_str = picked_date.strftime('%Y/%m/%d')
+    weekdays_map = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه", 3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
+    current_day = weekdays_map[picked_date.weekday()]
     
-    # بخش گلخانه‌ها (مطابق تصویر شما)
+    # نمایش روز هفته بلافاصله بعد از انتخاب تاریخ
+    st.info(f"💡 روز هفته: {current_day} | تاریخ: {shamsi_date_str}")
+except ValueError:
+    st.error("تاریخ اشتباه است! (مثلاً ۳۱ شهریور وجود ندارد)")
+    current_day = None
+
+st.markdown("---")
+
+# --- بخش فرم ثبت مقادیر ---
+with st.form(key="values_form"):
     c1, c2, c3 = st.columns(3)
     with c1:
         st.error("🏘️ گلخانه ۱")
@@ -81,21 +70,4 @@ with st.form(key="final_accurate_form"):
 
 # ذخیره اطلاعات
 if submit and current_day:
-    new_row = pd.DataFrame([{
-        "تاریخ": shamsi_date_str, "روز هفته": current_day,
-        "بذر ۱": seed1, "سوپر ۱": s1, "درجه ۱": g1,
-        "بذر ۲": seed2, "سوپر ۲": s2, "درجه ۲": g2,
-        "بذر ۳": seed3, "سوپر ۳": s3, "درجه ۳": g3
-    }])
-    updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-    try:
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.success(f"✅ اطلاعات روز {current_day} با موفقیت ثبت شد.")
-        st.cache_data.clear()
-        st.rerun()
-    except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
-
-st.divider()
-st.subheader("📋 سوابق ثبت شده")
-st.dataframe(existing_data, use_container_width=True)
+    new_row =
