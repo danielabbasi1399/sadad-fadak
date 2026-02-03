@@ -3,8 +3,8 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# تنظیمات صفحه
-st.set_page_config(page_title="سداد فدک - ورودی خالی", page_icon="🌶️", layout="wide")
+# تنظیمات ظاهری
+st.set_page_config(page_title="سداد فدک - نسخه نهایی", page_icon="🌶️", layout="wide")
 
 st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
@@ -19,61 +19,82 @@ except Exception:
     columns = ["تاریخ", "روز هفته", "بذر ۱", "سوپر ۱", "درجه ۱", "بذر ۲", "سوپر ۲", "درجه ۲", "بذر ۳", "سوپر ۳", "درجه ۳"]
     existing_data = pd.DataFrame(columns=columns)
 
-# --- بخش انتخاب تاریخ ---
+# --- انتخاب تاریخ (آپدیت آنی) ---
 st.subheader("📅 انتخاب زمان برداشت")
 now = jdatetime.datetime.now()
-col_y, col_m, col_d = st.columns(3)
+c_y, c_m, c_d = st.columns(3)
 
-with col_y:
+with c_y:
     year = st.selectbox("سال", [1403, 1404, 1405], index=1)
-with col_m:
-    month_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
-    month = st.selectbox("ماه", range(1, 13), format_func=lambda x: month_names[x-1], index=now.month-1)
-with col_d:
+with c_m:
+    m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+    month = st.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
+with c_d:
     day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-# محاسبه ۱۰۰٪ دقیق روز هفته
+# محاسبه دقیق روز هفته (۱ بهمن = چهارشنبه)
 try:
-    picked_date = jdatetime.date(year, month, day)
-    shamsi_date_str = picked_date.strftime('%Y/%m/%d')
-    gregorian_date = picked_date.togregorian()
-    weekdays_farsi = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه", 3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
-    current_day = weekdays_farsi[gregorian_date.weekday()]
-    st.success(f"✅ تاریخ انتخاب شده: {shamsi_date_str} | روز هفته: {current_day}")
+    p_date = jdatetime.date(year, month, day)
+    shamsi_str = p_date.strftime('%Y/%m/%d')
+    g_date = p_date.togregorian()
+    w_map = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه", 3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
+    current_day = w_map[g_date.weekday()]
+    st.info(f"💡 روز هفته: {current_day} | تاریخ: {shamsi_str}")
 except ValueError:
     st.error("تاریخ اشتباه است!")
     current_day = None
 
 st.markdown("---")
 
-# --- فرم ثبت مقادیر با کادرهای خالی ---
+# --- فرم ثبت با کادرهای خالی ---
 with st.form(key="harvest_form"):
-    c1, c2, c3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
     
-    with c1:
+    with col1:
         st.error("🏘️ گلخانه ۱")
         seed1 = st.selectbox("بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
-        # استفاده از text_input به جای number_input برای خالی بودن کادر
-        s1 = st.text_input("وزن سوپر ۱", placeholder="عدد وارد کنید")
-        g1 = st.text_input("وزن درجه ۱", placeholder="عدد وارد کنید")
+        s1 = st.text_input("وزن سوپر (۱)", value="", placeholder="مثلاً 120.5")
+        g1 = st.text_input("وزن درجه (۱)", value="", placeholder="مثلاً 45")
 
-    with c2:
+    with col2:
         st.info("🏘️ گلخانه ۲")
         seed2 = st.selectbox("بذر ۲", ["اندرومدا", "G20", "سایر"])
-        s2 = st.text_input("وزن سوپر ۲", placeholder="عدد وارد کنید")
-        g2 = st.text_input("وزن درجه ۲", placeholder="عدد وارد کنید")
+        s2 = st.text_input("وزن سوپر (۲)", value="", placeholder="مثلاً 80")
+        g2 = st.text_input("وزن درجه (۲)", value="", placeholder="مثلاً 15.5")
 
-    with c3:
+    with col3:
         st.success("🏘️ گلخانه ۳")
         seed3 = st.selectbox("بذر ۳", ["نیروین", "سایر"])
-        s3 = st.text_input("وزن سوپر ۳", placeholder="عدد وارد کنید")
-        g3 = st.text_input("وزن درجه ۳", placeholder="عدد وارد کنید")
+        s3 = st.text_input("وزن سوپر (۳)", value="", placeholder="مثلاً 200")
+        g3 = st.text_input("وزن درجه (۳)", value="", placeholder="مثلاً 10")
 
-    submit = st.form_submit_button(label="📥 ثبت نهایی در اکسل")
+    submit = st.form_submit_button(label="📥 ثبت در اکسل")
 
-# ذخیره اطلاعات
+# عملیات ذخیره
 if submit and current_day:
-    # تبدیل متن به عدد (اگر خالی باشد 0 در نظر گرفته می‌شود)
-    def to_float(val):
+    # تابع کمکی ساده برای تبدیل متن به عدد بدون خطا
+    def clean_val(v):
+        if v.strip() == "": return 0.0
         try:
-            return float(val) if val else 0.0
+            return float(v)
+        except:
+            return 0.0
+
+    new_row = pd.DataFrame([{
+        "تاریخ": shamsi_str, "روز هفته": current_day,
+        "بذر ۱": seed1, "سوپر ۱": clean_val(s1), "درجه ۱": clean_val(g1),
+        "بذر ۲": seed2, "سوپر ۲": clean_val(s2), "درجه ۲": clean_val(g2),
+        "بذر ۳": seed3, "سوپر ۳": clean_val(s3), "درجه ۳": clean_val(g3)
+    }])
+    
+    try:
+        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated_df)
+        st.success(f"✅ اطلاعات روز {current_day} ثبت شد.")
+        st.cache_data.clear()
+        st.rerun()
+    except Exception as e:
+        st.error(f"خطا در ثبت: {e}")
+
+st.divider()
+st.dataframe(existing_data, use_container_width=True)
