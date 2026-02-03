@@ -24,6 +24,13 @@ except Exception:
     ]
     existing_data = pd.DataFrame(columns=columns)
 
+# تابع کمکی برای تبدیل متن به عدد (برای محاسبات آنی)
+def get_num(val):
+    try:
+        return float(val) if val.strip() else 0.0
+    except:
+        return 0.0
+
 # --- انتخاب تاریخ ---
 st.subheader("📅 انتخاب زمان")
 now = jdatetime.datetime.now()
@@ -47,60 +54,74 @@ except ValueError:
 
 st.divider()
 
-# --- فرم نهایی با کادرهای کاملاً خالی ---
-with st.form(key="clean_form"):
+# --- فرم ثبت اطلاعات با نمایش جمع کل ---
+with st.form(key="total_sum_form"):
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.error("🏘️ گلخانه ۱")
-        st.markdown("**بذر اندرومدا**")
+        st.markdown("---")
+        st.markdown("**اندرومدا**")
         s1_an = st.text_input("سوپر", key="s1an", value="")
         g1_an = st.text_input("درجه", key="g1an", value="")
+        # نمایش جمع (در لحظه ثبت محاسبه می‌شود)
         st.markdown("---")
-        st.markdown("**بذر راگاراک**")
-        s1_ra = st.text_input("سوپر", key="s1ra", value="", label_visibility="visible")
-        g1_ra = st.text_input("درجه", key="g1ra", value="", label_visibility="visible")
+        st.markdown("**راگاراک**")
+        s1_ra = st.text_input("سوپر", key="s1ra", value="")
+        g1_ra = st.text_input("درجه", key="g1ra", value="")
 
     with col2:
         st.info("🏘️ گلخانه ۲")
-        st.markdown("**بذر اندرومدا**")
+        st.markdown("---")
+        st.markdown("**اندرومدا**")
         s2_an = st.text_input("سوپر", key="s2an", value="")
         g2_an = st.text_input("درجه", key="g2an", value="")
         st.markdown("---")
-        st.markdown("**بذر G20**")
+        st.markdown("**G20**")
         s2_g2 = st.text_input("سوپر", key="s2g2", value="")
         g2_g2 = st.text_input("درجه", key="g2g2", value="")
 
     with col3:
         st.success("🏘️ گلخانه ۳")
-        st.markdown("**بذر نیروین**")
+        st.markdown("---")
+        st.markdown("**نیروین**")
         s3_ni = st.text_input("سوپر", key="s3ni", value="")
         g3_ni = st.text_input("درجه", key="g3ni", value="")
-        st.markdown("---")
-        st.caption("ثبت فقط برای بذر نیروین")
 
+    st.markdown("---")
     submitted = st.form_submit_button("🚀 ثبت نهایی اطلاعات در اکسل")
 
 # پردازش و ذخیره
 if submitted and current_day:
-    def parse_val(v):
-        try: return float(v) if v.strip() else 0.0
-        except: return 0.0
+    # مقادیر عددی
+    v1_an_s = get_num(s1_an); v1_an_g = get_num(g1_an)
+    v1_ra_s = get_num(s1_ra); v1_ra_g = get_num(g1_ra)
+    v2_an_s = get_num(s2_an); v2_an_g = get_num(g2_an)
+    v2_g2_s = get_num(s2_g2); v2_g2_g = get_num(g2_g2)
+    v3_ni_s = get_num(s3_ni); v3_ni_g = get_num(g3_ni)
+
+    # نمایش جمع کل هر بذر در پیام موفقیت
+    total_1_an = v1_an_s + v1_an_g
+    total_1_ra = v1_ra_s + v1_ra_g
+    total_2_an = v2_an_s + v2_an_g
+    total_2_g2 = v2_g2_s + v2_g2_g
+    total_3_ni = v3_ni_s + v3_ni_g
 
     new_data = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
-        "اندرومدا ۱ (S)": parse_val(s1_an), "اندرومدا ۱ (G)": parse_val(g1_an),
-        "راگاراک ۱ (S)": parse_val(s1_ra), "راگاراک ۱ (G)": parse_val(g1_ra),
-        "اندرومدا ۲ (S)": parse_val(s2_an), "اندرومدا ۲ (G)": parse_val(g2_an),
-        "G20 2 (S)": parse_val(s2_g2), "G20 2 (G)": parse_val(g2_g2),
-        "نیروین ۳ (S)": parse_val(s3_ni), "نیروین ۳ (G)": parse_val(g3_ni)
+        "اندرومدا ۱ (S)": v1_an_s, "اندرومدا ۱ (G)": v1_an_g,
+        "راگاراک ۱ (S)": v1_ra_s, "راگاراک ۱ (G)": v1_ra_g,
+        "اندرومدا ۲ (S)": v2_an_s, "اندرومدا ۲ (G)": v2_an_g,
+        "G20 2 (S)": v2_g2_s, "G20 2 (G)": v2_g2_g,
+        "نیروین ۳ (S)": v3_ni_s, "نیروین ۳ (G)": v3_ni_g
     }])
     
     try:
         updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
         st.balloons()
-        st.success("✅ ثبت شد.")
+        # نمایش گزارش کوتاه به کاربر
+        st.success(f"✅ ثبت شد! جمع اندرومدا ۱: {total_1_an} | راگاراک ۱: {total_1_ra} | بقیه موارد نیز ثبت شدند.")
         st.cache_data.clear()
         st.rerun()
     except Exception as e:
