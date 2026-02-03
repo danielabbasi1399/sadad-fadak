@@ -1,68 +1,63 @@
 import streamlit as st
-from bidi.algorithm import get_display
-import arabic_reshaper
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
-# تابع برای راست‌چین کردن متن‌های فارسی در نمودارها و جداول
-def farsi_text(text):
-    reshaped_text = arabic_reshaper.reshape(text)
-    return get_display(reshaped_text)
+# تنظیمات صفحه
+st.set_page_config(page_title="مدیریت گلخانه سداد فدک", page_icon="🌱")
 
-# تنظیمات اصلی صفحه
-st.set_page_config(page_title="مدیریت گلخانه سداد فدک", layout="wide")
+st.title("ثبت برداشت روزانه")
 
-# شناسه فایل گوگل شیت شما (استخراج شده از لینکی که فرستادید)
-SHEET_ID = '1TnEoy_TNn72BQypxE2RxVcgErtAeN9PlP_coWpRoIMg'
-SHEET_NAME = 'Sheet1'
-URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
+# اتصال به گوگل شیت
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-st.title("🌿 سامانه هوشمند گلخانه سداد فدک")
-
-# تعریف ساختار بذرها طبق توضیحات شما
-structure = {
-    "گلخانه ۱": ["اندرومدا", "راگا راک"],
-    "گلخانه ۲": ["اندرومدا", "جی ۲۰"],
-    "گلخانه ۳": ["نیروین شرکتی", "نیروین"]
-}
-
-# --- بخش ثبت داده ---
-st.sidebar.header("ثبت بار روزانه")
-with st.sidebar.form("daily_form", clear_on_submit=True):
-    date_val = st.date_input("تاریخ", datetime.now())
-    gh_choice = st.selectbox("انتخاب گلخانه", list(structure.keys()))
-    seed_choice = st.selectbox("نوع بذر", structure[gh_choice])
-    super_w = st.number_input("وزن بار سوپر (کیلو)", min_value=0.0)
-    deg2_w = st.number_input("وزن بار درجه ۲ (کیلو)", min_value=0.0)
-    
-    submit = st.form_submit_button("ذخیره در بانک اطلاعاتی")
-
-if submit:
-    # در اینجا کد اتصال برای نوشتن (Write) قرار می‌گیرد
-    st.success(f"اطلاعات بذر {seed_choice} با موفقیت ثبت شد.")
-
-# --- بخش گزارش‌گیری ---
-st.header("📊 گزارشات مدیریتی (دفتر اصفهان / موبایل)")
-
+# خواندن داده‌ها برای نمایش
 try:
-    df = pd.read_csv(URL)
-    
-    # فیلترهای گزارش
-    tab1, tab2, tab3 = st.tabs(["گزارش روزانه", "گزارش هفتگی/ماهانه", "جمع کل"])
-    
-    with tab1:
-        st.subheader("برداشت امروز")
-        # نمایش داده‌های امروز
-        st.dataframe(df.tail(10)) # نمایش آخرین ورودی‌ها
+    existing_data = conn.read(worksheet="Sheet1", ttl=0)
+    existing_data = existing_data.dropna(how="all")
+except Exception:
+    existing_data = pd.DataFrame(columns=["تاریخ", "گلخانه", "بذر", "سوپر", "درجه"])
 
-    with tab2:
-        st.subheader("تحلیل دوره‌ای")
-        # در اینجا می‌توانید فیلتر تاریخ بگذارید
+# فرم ورودی
+with st.form(key="input_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        date = st.date_input("تاریخ", value=datetime.now())
+        greenhouse = st.text_input("نام یا شماره گلخانه")
+    with col2:
+        seed_type = st.text_input("نوع بذر")
+        super_weight = st.number_input("وزن سوپر", min_value=0.0)
+        grade_weight = st.number_input("وزن درجه", min_value=0.0)
+    
+    submit_button = st.form_submit_button(label="ثبت اطلاعات در لیست")
+
+# عملیات ثبت
+if submit_button:
+    if greenhouse and seed_type:
+        # ایجاد ردیف جدید بر اساس نام دقیق ستون‌های شما در عکس (ستون ها.png)
+        new_row = pd.DataFrame([{
+            "تاریخ": date.strftime('%Y-%m-%d'),
+            "گلخانه": greenhouse,
+            "بذر": seed_type,
+            "سوپر": super_weight,
+            "درجه": grade_weight
+        }])
         
-    with tab3:
-        st.subheader("آمار کل بذرها")
-        summary = df.groupby(['گلخانه', 'بذر'])[['سوپر', 'درجه ۲']].sum()
-        st.table(summary)
+        # ترکیب با داده‌های قبلی
+        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        
+        try:
+            # بروزرسانی شیت
+            conn.update(worksheet="Sheet1", data=updated_df)
+            st.success("✅ اطلاعات با موفقیت در گوگل شیت ذخیره شد!")
+            st.cache_data.clear()
+            st.rerun()
+        except Exception as e:
+            st.error(f"❌ خطا: {e}")
+    else:
+        st.warning("⚠️ لطفا نام گلخانه و نوع بذر را وارد کنید.")
 
-except:
-    st.info("در حال حاضر فایلی برای نمایش وجود ندارد یا داده‌ای ثبت نشده است.")
+# نمایش جدول نهایی در سایت
+st.divider()
+st.subheader("📊 گزارش برداشت‌های ثبت شده")
+st.dataframe(existing_data, use_container_width=True)
