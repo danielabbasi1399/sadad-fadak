@@ -68,4 +68,43 @@ with st.form(key="clean_form"):
         g2_an = st.text_input("درجه", key="g2an", value="")
         st.markdown("---")
         st.markdown("**بذر G20**")
-        s2
+        s2_g2 = st.text_input("سوپر", key="s2g2", value="")
+        g2_g2 = st.text_input("درجه", key="g2g2", value="")
+
+    with col3:
+        st.success("🏘️ گلخانه ۳")
+        st.markdown("**بذر نیروین**")
+        s3_ni = st.text_input("سوپر", key="s3ni", value="")
+        g3_ni = st.text_input("درجه", key="g3ni", value="")
+        st.markdown("---")
+        st.caption("ثبت فقط برای بذر نیروین")
+
+    submitted = st.form_submit_button("🚀 ثبت نهایی اطلاعات در اکسل")
+
+# پردازش و ذخیره
+if submitted and current_day:
+    def parse_val(v):
+        try: return float(v) if v.strip() else 0.0
+        except: return 0.0
+
+    new_data = pd.DataFrame([{
+        "تاریخ": shamsi_str, "روز هفته": current_day,
+        "اندرومدا ۱ (S)": parse_val(s1_an), "اندرومدا ۱ (G)": parse_val(g1_an),
+        "راگاراک ۱ (S)": parse_val(s1_ra), "راگاراک ۱ (G)": parse_val(g1_ra),
+        "اندرومدا ۲ (S)": parse_val(s2_an), "اندرومدا ۲ (G)": parse_val(g2_an),
+        "G20 2 (S)": parse_val(s2_g2), "G20 2 (G)": parse_val(g2_g2),
+        "نیروین ۳ (S)": parse_val(s3_ni), "نیروین ۳ (G)": parse_val(g3_ni)
+    }])
+    
+    try:
+        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated_df)
+        st.balloons()
+        st.success("✅ ثبت شد.")
+        st.cache_data.clear()
+        st.rerun()
+    except Exception as e:
+        st.error(f"خطا: {e}")
+
+st.divider()
+st.dataframe(existing_data, use_container_width=True)
