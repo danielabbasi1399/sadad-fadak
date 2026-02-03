@@ -2,9 +2,10 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
+from streamlit_jalali_calendar import date_picker
 
 # تنظیمات صفحه
-st.set_page_config(page_title="سیستم پیشرفته سداد فدک", page_icon="🌶️", layout="wide")
+st.set_page_config(page_title="سیستم هوشمند سداد فدک", page_icon="🌶️", layout="wide")
 
 st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
@@ -21,29 +22,27 @@ except Exception:
 
 # فرم ورودی اطلاعات
 with st.form(key="smart_form"):
-    st.subheader("📅 انتخاب زمان (تقویم کشویی)")
+    st.subheader("📅 انتخاب زمان (فقط تقویم شمسی)")
     col_d1, col_d2 = st.columns(2)
     
     with col_d1:
-        # ایجاد انتخابگر تاریخ کشویی (تقویم)
-        picked_date = st.date_input("انتخاب تاریخ از تقویم")
+        # ایجاد تقویم کشویی کاملاً شمسی
+        picked_date = date_picker("انتخاب تاریخ شمسی", key="date_p")
         
-        # تبدیل تاریخ میلادی به شمسی برای ذخیره در اکسل
-        shamsi_date_obj = jdatetime.date.fromgregorian(date=picked_date)
-        shamsi_date_str = shamsi_date_obj.strftime('%Y/%m/%d')
+        # تبدیل تاریخ برای محاسبات و نمایش
+        shamsi_date_str = picked_date.strftime('%Y/%m/%d')
         
     with col_d2:
-        # محاسبه دقیق روز هفته بر اساس تقویم فارسی
+        # محاسبه دقیق روز هفته فارسی
         weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
-        # در jdatetime متد weekday() برای دوشنبه 0 و برای یکشنبه 6 برمی‌گرداند
-        current_day = weekdays[shamsi_date_obj.weekday()]
+        current_day = weekdays[picked_date.weekday()]
         
-        st.info(f"تاریخ شمسی: {shamsi_date_str}")
-        st.success(f"روز هفته محاسبه شده: {current_day}")
+        st.info(f"تاریخ انتخاب شده: {shamsi_date_str}")
+        st.success(f"روز هفته: {current_day}")
 
     st.markdown("---")
     
-    # بخش گلخانه‌ها (دقیقاً مشابه عکس شما)
+    # بخش گلخانه‌ها
     c1, c2, c3 = st.columns(3)
     
     with c1:
@@ -81,12 +80,12 @@ if submit:
     
     try:
         conn.update(worksheet="Sheet1", data=updated_df)
-        st.success(f"✅ اطلاعات روز {current_day} با تاریخ {shamsi_date_str} ثبت شد.")
+        st.success(f"✅ اطلاعات روز {current_day} با موفقیت در اکسل ثبت شد.")
         st.cache_data.clear()
         st.rerun()
     except Exception as e:
         st.error(f"خطا در ثبت: {e}")
 
 # نمایش لیست
-st.subheader("📋 لیست داده‌های ثبت شده در اکسل")
+st.subheader("📋 لیست داده‌های ثبت شده")
 st.dataframe(existing_data, use_container_width=True)
