@@ -2,9 +2,9 @@ streamlit
 pandas
 arabic-reshaper
 python-bidi
+
+
+
 st-gsheets-connection
 jdatetime
-streamlit
-pandas
-st-gsheets-connection
-jdatetime
+streamlit-jalali-calendar
