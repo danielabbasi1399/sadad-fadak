@@ -3,10 +3,10 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# تنظیمات ظاهری
-st.set_page_config(page_title="سداد فدک - نسخه نهایی", page_icon="🌶️", layout="wide")
+# تنظیمات صفحه
+st.set_page_config(page_title="سداد فدک - ثبت تفکیکی کامل", page_icon="🌶️", layout="wide")
 
-st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
+st.title("ثبت برداشت روزانه - تفکیک بذر هر سه گلخانه")
 
 # اتصال به گوگل شیت
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -16,23 +16,24 @@ try:
     existing_data = conn.read(worksheet="Sheet1", ttl=0)
     existing_data = existing_data.dropna(how="all")
 except Exception:
-    columns = ["تاریخ", "روز هفته", "بذر ۱", "سوپر ۱", "درجه ۱", "بذر ۲", "سوپر ۲", "درجه ۲", "بذر ۳", "سوپر ۳", "درجه ۳"]
+    columns = [
+        "تاریخ", "روز هفته", 
+        "اندرومدا ۱ (S)", "اندرومدا ۱ (G)", "راگاراک ۱ (S)", "راگاراک ۱ (G)",
+        "اندرومدا ۲ (S)", "اندرومدا ۲ (G)", "G20 2 (S)", "G20 2 (G)",
+        "نیروین ۳ (S)", "نیروین ۳ (G)"
+    ]
     existing_data = pd.DataFrame(columns=columns)
 
 # --- انتخاب تاریخ (آپدیت آنی) ---
 st.subheader("📅 انتخاب زمان برداشت")
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
-
-with c_y:
-    year = st.selectbox("سال", [1403, 1404, 1405], index=1)
-with c_m:
+with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
+with c_m: 
     m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
     month = st.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
-with c_d:
-    day = st.selectbox("روز", range(1, 32), index=now.day-1)
+with c_d: day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-# محاسبه دقیق روز هفته (۱ بهمن = چهارشنبه)
 try:
     p_date = jdatetime.date(year, month, day)
     shamsi_str = p_date.strftime('%Y/%m/%d')
@@ -46,55 +47,34 @@ except ValueError:
 
 st.markdown("---")
 
-# --- فرم ثبت با کادرهای خالی ---
+# --- فرم ثبت تفکیکی برای هر سه گلخانه ---
 with st.form(key="harvest_form"):
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.error("🏘️ گلخانه ۱")
-        seed1 = st.selectbox("بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
-        s1 = st.text_input("وزن سوپر (۱)", value="", placeholder="مثلاً 120.5")
-        g1 = st.text_input("وزن درجه (۱)", value="", placeholder="مثلاً 45")
+        st.write("**بذر اندرومدا**")
+        s1_an = st.text_input("سوپر (۱-اندرومدا)", value="", placeholder="وزن")
+        g1_an = st.text_input("درجه (۱-اندرومدا)", value="", placeholder="وزن")
+        st.write("---")
+        st.write("**بذر راگاراک**")
+        s1_ra = st.text_input("سوپر (۱-راگاراک)", value="", placeholder="وزن")
+        g1_ra = st.text_input("درجه (۱-راگاراک)", value="", placeholder="وزن")
 
     with col2:
         st.info("🏘️ گلخانه ۲")
-        seed2 = st.selectbox("بذر ۲", ["اندرومدا", "G20", "سایر"])
-        s2 = st.text_input("وزن سوپر (۲)", value="", placeholder="مثلاً 80")
-        g2 = st.text_input("وزن درجه (۲)", value="", placeholder="مثلاً 15.5")
+        st.write("**بذر اندرومدا**")
+        s2_an = st.text_input("سوپر (۲-اندرومدا)", value="", placeholder="وزن")
+        g2_an = st.text_input("درجه (۲-اندرومدا)", value="", placeholder="وزن")
+        st.write("---")
+        st.write("**بذر G20**")
+        s2_g20 = st.text_input("سوپر (۲-G20)", value="", placeholder="وزن")
+        g2_g20 = st.text_input("درجه (۲-G20)", value="", placeholder="وزن")
 
     with col3:
         st.success("🏘️ گلخانه ۳")
-        seed3 = st.selectbox("بذر ۳", ["نیروین", "سایر"])
-        s3 = st.text_input("وزن سوپر (۳)", value="", placeholder="مثلاً 200")
-        g3 = st.text_input("وزن درجه (۳)", value="", placeholder="مثلاً 10")
-
-    submit = st.form_submit_button(label="📥 ثبت در اکسل")
-
-# عملیات ذخیره
-if submit and current_day:
-    # تابع کمکی ساده برای تبدیل متن به عدد بدون خطا
-    def clean_val(v):
-        if v.strip() == "": return 0.0
-        try:
-            return float(v)
-        except:
-            return 0.0
-
-    new_row = pd.DataFrame([{
-        "تاریخ": shamsi_str, "روز هفته": current_day,
-        "بذر ۱": seed1, "سوپر ۱": clean_val(s1), "درجه ۱": clean_val(g1),
-        "بذر ۲": seed2, "سوپر ۲": clean_val(s2), "درجه ۲": clean_val(g2),
-        "بذر ۳": seed3, "سوپر ۳": clean_val(s3), "درجه ۳": clean_val(g3)
-    }])
-    
-    try:
-        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.success(f"✅ اطلاعات روز {current_day} ثبت شد.")
-        st.cache_data.clear()
-        st.rerun()
-    except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
-
-st.divider()
-st.dataframe(existing_data, use_container_width=True)
+        st.write("**بذر نیروین**")
+        s3_ni = st.text_input("سوپر (۳-نیروین)", value="", placeholder="وزن")
+        g3_ni = st.text_input("درجه (۳-نیروین)", value="", placeholder="وزن")
+        st.write("---")
+        st.write(" ") # برای تراز شدن ستون‌ها
