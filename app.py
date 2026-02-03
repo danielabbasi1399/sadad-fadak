@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
-from streamlit_persian_datepicker import date_picker
 
 # تنظیمات صفحه
 st.set_page_config(page_title="سداد فدک - ثبت هوشمند", page_icon="🌶️", layout="wide")
@@ -20,44 +19,56 @@ except Exception:
     columns = ["تاریخ", "روز هفته", "بذر ۱", "سوپر ۱", "درجه ۱", "بذر ۲", "سوپر ۲", "درجه ۲", "بذر ۳", "سوپر ۳", "درجه ۳"]
     existing_data = pd.DataFrame(columns=columns)
 
-# فرم ورودی
-with st.form(key="final_form"):
-    st.subheader("📅 انتخاب تاریخ از تقویم شمسی")
+# فرم ورودی با تقویم شمسی اختصاصی (بدون نیاز به پکیج اضافی)
+with st.form(key="final_safe_form"):
+    st.subheader("📅 انتخاب تاریخ شمسی")
     
-    # ایجاد تقویم بازشو (Pop-up) دقیقاً مشابه تصویر درخواستی شما اما شمسی
-    picked_date = date_picker(label="برای انتخاب تاریخ کلیک کنید", default_value=jdatetime.date.today())
+    now = jdatetime.datetime.now()
+    col_y, col_m, col_d = st.columns(3)
     
-    if picked_date:
+    with col_y:
+        year = st.selectbox("سال", [1403, 1404, 1405], index=1)
+    with col_m:
+        month_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+        month = st.selectbox("ماه", range(1, 13), format_func=lambda x: month_names[x-1], index=now.month-1)
+    with col_d:
+        day = st.selectbox("روز", range(1, 32), index=now.day-1)
+
+    # محاسبه دقیق روز هفته
+    try:
+        picked_date = jdatetime.date(year, month, day)
         shamsi_date_str = picked_date.strftime('%Y/%m/%d')
         weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
         current_day = weekdays[picked_date.weekday()]
-        
-        st.info(f"تاریخ انتخاب شده: {shamsi_date_str} ({current_day})")
-    
+        st.success(f"✅ تاریخ انتخاب شده: {shamsi_date_str} ({current_day})")
+    except ValueError:
+        st.error("تاریخ اشتباه است! (مثلاً ۳۱ شهریور نداریم)")
+        current_day = None
+
     st.markdown("---")
     
     # چیدمان سه ستونه گلخانه‌ها
     c1, c2, c3 = st.columns(3)
     with c1:
         st.error("🏘️ گلخانه ۱")
-        seed1 = st.selectbox("نوع بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
-        s1 = st.number_input("سوپر (۱)", min_value=0.0, step=0.1)
-        g1 = st.number_input("درجه (۱)", min_value=0.0, step=0.1)
+        seed1 = st.selectbox("بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
+        s1 = st.number_input("سوپر ۱", min_value=0.0, step=0.1)
+        g1 = st.number_input("درجه ۱", min_value=0.0, step=0.1)
     with c2:
         st.info("🏘️ گلخانه ۲")
-        seed2 = st.selectbox("نوع بذر ۲", ["اندرومدا", "G20", "سایر"])
-        s2 = st.number_input("سوپر (۲)", min_value=0.0, step=0.1)
-        g2 = st.number_input("درجه (۲)", min_value=0.0, step=0.1)
+        seed2 = st.selectbox("بذر ۲", ["اندرومدا", "G20", "سایر"])
+        s2 = st.number_input("سوپر ۲", min_value=0.0, step=0.1)
+        g2 = st.number_input("درجه ۲", min_value=0.0, step=0.1)
     with c3:
         st.success("🏘️ گلخانه ۳")
-        seed3 = st.selectbox("نوع بذر ۳", ["نیروین", "سایر"])
-        s3 = st.number_input("سوپر (۳)", min_value=0.0, step=0.1)
-        g3 = st.number_input("درجه (۳)", min_value=0.0, step=0.1)
+        seed3 = st.selectbox("بذر ۳", ["نیروین", "سایر"])
+        s3 = st.number_input("سوپر ۳", min_value=0.0, step=0.1)
+        g3 = st.number_input("درجه ۳", min_value=0.0, step=0.1)
 
     submit = st.form_submit_button(label="📥 ثبت نهایی در اکسل")
 
-# عملیات ذخیره
-if submit and picked_date:
+# ذخیره اطلاعات
+if submit and current_day:
     new_row = pd.DataFrame([{
         "تاریخ": shamsi_date_str, "روز هفته": current_day,
         "بذر ۱": seed1, "سوپر ۱": s1, "درجه ۱": g1,
@@ -67,11 +78,11 @@ if submit and picked_date:
     updated_df = pd.concat([existing_data, new_row], ignore_index=True)
     try:
         conn.update(worksheet="Sheet1", data=updated_df)
-        st.success("✅ اطلاعات با موفقیت در اکسل ثبت شد.")
+        st.success("✅ اطلاعات با موفقیت ثبت شد.")
         st.cache_data.clear()
         st.rerun()
     except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
+        st.error(f"خطا در ارتباط با گوگل‌شیت: {e}")
 
 st.divider()
 st.dataframe(existing_data, use_container_width=True)
