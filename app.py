@@ -3,15 +3,15 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# تنظیمات اصلی برنامه
-st.set_page_config(page_title="سداد فدک - نسخه نهایی", page_icon="🌶️", layout="wide")
+# تنظیمات صفحه
+st.set_page_config(page_title="سداد فدک - دقت ۱۰۰٪", page_icon="🌶️", layout="wide")
 
 st.title("ثبت هوشمند برداشت - گلخانه‌های ۱، ۲ و ۳")
 
 # اتصال به گوگل شیت
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# خواندن داده‌های قبلی
+# خواندن داده‌ها
 try:
     existing_data = conn.read(worksheet="Sheet1", ttl=0)
     existing_data = existing_data.dropna(how="all")
@@ -32,27 +32,32 @@ with col_m:
 with col_d:
     day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
-# محاسبه ۱۰۰٪ دقیق روز هفته مخصوص تقویم ایران
+# محاسبه ۱۰۰٪ دقیق روز هفته (روش تبدیل به میلادی و استخراج نام روز)
 try:
+    # ساخت شیء تاریخ شمسی
     picked_date = jdatetime.date(year, month, day)
     shamsi_date_str = picked_date.strftime('%Y/%m/%d')
     
-    # متد jdatetime.weekday() برای شنبه عدد 5 و برای یکشنبه عدد 6 برمی‌گرداند.
-    # این نقشه دقیقا با خروجی این کتابخانه هماهنگ شده است:
-    weekdays_map = {
-        5: "شنبه",
-        6: "یکشنبه",
+    # تبدیل به میلادی برای گرفتن روز هفته دقیق جهانی
+    gregorian_date = picked_date.togregorian()
+    
+    # نام روزهای هفته به فارسی (دوشنبه در پایتون 0 است)
+    weekdays_farsi = {
         0: "دوشنبه",
         1: "سه‌شنبه",
         2: "چهارشنبه",
         3: "پنج‌شنبه",
-        4: "جمعه"
+        4: "جمعه",
+        5: "شنبه",
+        6: "یکشنبه"
     }
-    current_day = weekdays_map[picked_date.weekday()]
     
-    st.success(f"📅 تاریخ: {shamsi_date_str} | روز هفته: {current_day}")
+    # استخراج روز هفته از تاریخ میلادی معادل
+    current_day = weekdays_farsi[gregorian_date.weekday()]
+    
+    st.success(f"✅ تاریخ انتخاب شده: {shamsi_date_str} | روز هفته: {current_day}")
 except ValueError:
-    st.error("تاریخ اشتباه است!")
+    st.error("تاریخ اشتباه است! (مثلاً ۳۱ شهریور نداریم)")
     current_day = None
 
 st.markdown("---")
@@ -62,21 +67,21 @@ with st.form(key="harvest_form"):
     c1, c2, c3 = st.columns(3)
     with c1:
         st.error("🏘️ گلخانه ۱")
-        seed1 = st.selectbox("نوع بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
-        s1 = st.number_input("سوپر (۱)", min_value=0.0, step=0.1, key="s1")
-        g1 = st.number_input("درجه (۱)", min_value=0.0, step=0.1, key="g1")
+        seed1 = st.selectbox("بذر ۱", ["اندرومدا", "راگاراک", "سایر"])
+        s1 = st.number_input("سوپر ۱", min_value=0.0, step=0.1)
+        g1 = st.number_input("درجه ۱", min_value=0.0, step=0.1)
     with c2:
         st.info("🏘️ گلخانه ۲")
-        seed2 = st.selectbox("نوع بذر ۲", ["اندرومدا", "G20", "سایر"])
-        s2 = st.number_input("سوپر (۲)", min_value=0.0, step=0.1, key="s2")
-        g2 = st.number_input("درجه (۲)", min_value=0.0, step=0.1, key="g2")
+        seed2 = st.selectbox("بذر ۲", ["اندرومدا", "G20", "سایر"])
+        s2 = st.number_input("سوپر ۲", min_value=0.0, step=0.1)
+        g2 = st.number_input("درجه ۲", min_value=0.0, step=0.1)
     with c3:
         st.success("🏘️ گلخانه ۳")
-        seed3 = st.selectbox("نوع بذر ۳", ["نیروین", "سایر"])
-        s3 = st.number_input("سوپر (۳)", min_value=0.0, step=0.1, key="s3")
-        g3 = st.number_input("درجه (۳)", min_value=0.0, step=0.1, key="g3")
+        seed3 = st.selectbox("بذر ۳", ["نیروین", "سایر"])
+        s3 = st.number_input("سوپر ۳", min_value=0.0, step=0.1)
+        g3 = st.number_input("درجه ۳", min_value=0.0, step=0.1)
 
-    submit = st.form_submit_button(label="📥 ثبت نهایی در فایل اکسل")
+    submit = st.form_submit_button(label="📥 ثبت نهایی در اکسل")
 
 if submit and current_day:
     new_row = pd.DataFrame([{
@@ -88,8 +93,7 @@ if submit and current_day:
     updated_df = pd.concat([existing_data, new_row], ignore_index=True)
     try:
         conn.update(worksheet="Sheet1", data=updated_df)
-        st.balloons()
-        st.success(f"✅ اطلاعات با موفقیت ثبت شد.")
+        st.success(f"✅ اطلاعات روز {current_day} با موفقیت ثبت شد.")
         st.cache_data.clear()
         st.rerun()
     except Exception as e:
