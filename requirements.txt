@@ -2,7 +2,3 @@ streamlit
 pandas
 st-gsheets-connection
 jdatetime
-streamlit
-pandas
-st-gsheets-connection
-jdatetime
