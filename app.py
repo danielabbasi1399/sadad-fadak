@@ -72,4 +72,33 @@ with col2:
 with col3:
     st.success("🏘️ گلخانه ۳")
     # نیروین
-    st.write("**نیروین**
+    st.write("**نیروین**")
+    s3ni = st.text_input("سوپر", key="s3ni", value="")
+    g3ni = st.text_input("درجه", key="g3ni", value="")
+    total3ni = n(s3ni) + n(g3ni)
+    st.write(f"🔹 جمع: {total3ni if total3ni > 0 else ''}")
+
+st.divider()
+
+if st.button("🚀 ثبت نهایی در اکسل"):
+    new_data = pd.DataFrame([{
+        "تاریخ": shamsi_str, "روز هفته": current_day,
+        "اندرومدا ۱ (S)": n(s1an), "اندرومدا ۱ (G)": n(g1an),
+        "راگاراک ۱ (S)": n(s1ra), "راگاراک ۱ (G)": n(g1ra),
+        "اندرومدا ۲ (S)": n(s2an), "اندرومدا ۲ (G)": n(g2an),
+        "G20 2 (S)": n(s2g2), "G20 2 (G)": n(g2g2),
+        "نیروین ۳ (S)": n(s3ni), "نیروین ۳ (G)": n(g3ni)
+    }])
+    
+    try:
+        existing_data = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
+        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated_df)
+        st.balloons()
+        st.success("✅ با موفقیت ثبت شد.")
+        st.cache_data.clear()
+    except:
+        st.error("خطا در ثبت!")
+
+st.subheader("📋 سوابق")
+st.dataframe(conn.read(worksheet="Sheet1", ttl=0).dropna(how="all"), use_container_width=True)
