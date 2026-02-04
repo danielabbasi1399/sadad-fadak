@@ -3,10 +3,10 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# تنظیمات صفحه
+# ۱. این خط باعث می‌شود برنامه از تمام پهنای مانیتور استفاده کند و کوچک نباشد
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
-# استایل CSS برای کادربندی
+# استایل CSS (بدون تغییر در ابعاد، فقط برای زیبایی کادرها)
 st.markdown("""
     <style>
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
@@ -26,7 +26,6 @@ st.title("📊 مدیریت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- مدیریت ریست کردن فرم ---
 if 'form_iteration' not in st.session_state:
     st.session_state.form_iteration = 0
 
@@ -34,7 +33,7 @@ def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- بخش انتخاب تاریخ ---
+# --- بخش انتخاب تاریخ و روز هفته ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 year = c_y.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -42,14 +41,18 @@ m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرد
 month = c_m.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
 day = c_d.selectbox("روز", range(1, 32), index=now.day-1)
 
-shamsi_str = jdatetime.date(year, month, day).strftime('%Y/%m/%d')
-st.success(f"🗓️ تاریخ: {shamsi_str}")
+# پیدا کردن روز هفته
+selected_date = jdatetime.date(year, month, day)
+shamsi_str = selected_date.strftime('%Y/%m/%d')
+weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
+day_name = weekdays[selected_date.weekday()]
+
+st.success(f"🗓️ تاریخ: {shamsi_str} ({day_name})")
 
 st.divider()
 
-# --- بخش ورودی‌ها (با کلید داینامیک برای ریست شدن) ---
+# --- بخش ورودی‌ها ---
 iter_prefix = f"v_{st.session_state.form_iteration}_"
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -94,11 +97,10 @@ with col3:
 
 st.divider()
 
-# --- محاسبات نهایی ---
+# --- محاسبات و ثبت ---
 an_s = n(s1an) + n(s2an)
-an_g = n(g1an) + n(g2an)
 total_s_all = an_s + n(s1ra) + n(s2g2) + n(s3ni)
-total_g_all = an_g + n(g1ra) + n(g2g2) + n(g3ni)
+total_g_all = (n(g1an) + n(g2an)) + n(g1ra) + n(g2g2) + n(g3ni)
 
 st.subheader("📊 آمار تولید بر اساس نوع بذر")
 f1, f2, f3 = st.columns(3)
@@ -106,24 +108,14 @@ f1.metric("کل سوپر", total_s_all)
 f2.metric("کل درجه", total_g_all)
 f3.metric("جمع نهایی", total_s_all + total_g_all)
 
-# --- عملیات ثبت ---
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
-        # کد ثبت در گوگل شیت
-        new_data = pd.DataFrame([{
-            "تاریخ": shamsi_str, "اندرومدا S": an_s, "راگاراک S": n(s1ra), "G20 S": n(s2g2), "نیروین S": n(s3ni)
-            # بقیه ستون‌ها را بر اساس شیت خود اینجا اضافه کنید
-        }])
-        
-        # ثبت در دیتابیس (گوگل شیت)
+        new_data = pd.DataFrame([{"تاریخ": shamsi_str, "روز": day_name, "جمع کل": total_s_all + total_g_all}])
         existing_data = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
         updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
-        
-        # --- جادوی پاک کردن فرم ---
         st.session_state.form_iteration += 1 
-        st.success("✅ اطلاعات با موفقیت ثبت شد و فرم ریست گردید.")
+        st.success("✅ اطلاعات ثبت شد.")
         st.rerun()
-        
     except Exception as e:
-        st.error(f"خطا در اتصال به جدول: {e}")
+        st.error(f"خطا: {e}")
