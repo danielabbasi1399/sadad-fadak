@@ -6,6 +6,7 @@ import jdatetime
 # تنظیمات صفحه
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
+# استایل CSS برای کادربندی
 st.markdown("""
     <style>
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
@@ -25,11 +26,9 @@ st.title("📊 مدیریت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# مقداردهی اولیه به session_state برای جلوگیری از خطا
-keys = ["s1an", "g1an", "s1ra", "g1ra", "s2an", "g2an", "s2g2", "g2g2", "s3ni", "g3ni"]
-for k in keys:
-    if k not in st.session_state:
-        st.session_state[k] = ""
+# --- مدیریت ریست کردن فرم ---
+if 'form_iteration' not in st.session_state:
+    st.session_state.form_iteration = 0
 
 def n(v):
     try: return float(v) if v.strip() else 0.0
@@ -48,20 +47,22 @@ st.success(f"🗓️ تاریخ: {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌ها (با کلید داینامیک برای ریست شدن) ---
+iter_prefix = f"v_{st.session_state.form_iteration}_"
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #e74c3c;">🏘️ گلخانه ۱</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **اندرومدا**")
-        s1an = st.text_input("سوپر", key="s1an")
-        g1an = st.text_input("درجه", key="g1an")
+        st.markdown("🔴 **بذر اندرومدا**")
+        s1an = st.text_input("سوپر", key=f"{iter_prefix}s1an")
+        g1an = st.text_input("درجه", key=f"{iter_prefix}g1an")
         st.write(f"جمع: {n(s1an) + n(g1an) if n(s1an) + n(g1an) > 0 else ''}")
         st.markdown("---")
-        st.markdown("🟡 **راگاراک**")
-        s1ra = st.text_input("سوپر ", key="s1ra")
-        g1ra = st.text_input("درجه ", key="g1ra")
+        st.markdown("🟡 **بذر راگاراک**")
+        s1ra = st.text_input("سوپر ", key=f"{iter_prefix}s1ra")
+        g1ra = st.text_input("درجه ", key=f"{iter_prefix}g1ra")
         st.write(f"جمع: {n(s1ra) + n(g1ra) if n(s1ra) + n(g1ra) > 0 else ''}")
         st.markdown("---")
         st.write(f"**جمع کل گ۱:** {n(s1an) + n(s1ra) + n(g1an) + n(g1ra)}")
@@ -69,14 +70,14 @@ with col1:
 with col2:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #3498db;">🏘️ گلخانه ۲</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **اندرومدا**")
-        s2an = st.text_input("سوپر  ", key="s2an")
-        g2an = st.text_input("درجه  ", key="g2an")
+        st.markdown("🔴 **بذر اندرومدا**")
+        s2an = st.text_input("سوپر  ", key=f"{iter_prefix}s2an")
+        g2an = st.text_input("درجه  ", key=f"{iter_prefix}g2an")
         st.write(f"جمع: {n(s2an) + n(g2an) if n(s2an) + n(g2an) > 0 else ''}")
         st.markdown("---")
-        st.markdown("🔴 **G20**")
-        s2g2 = st.text_input("سوپر   ", key="s2g2")
-        g2g2 = st.text_input("درجه   ", key="g2g2")
+        st.markdown("🔴 **بذر G20**")
+        s2g2 = st.text_input("سوپر   ", key=f"{iter_prefix}s2g2")
+        g2g2 = st.text_input("درجه   ", key=f"{iter_prefix}g2g2")
         st.write(f"جمع: {n(s2g2) + n(g2g2) if n(s2g2) + n(g2g2) > 0 else ''}")
         st.markdown("---")
         st.write(f"**جمع کل گ۲:** {n(s2an) + n(s2g2) + n(g2an) + n(g2g2)}")
@@ -85,15 +86,15 @@ with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
         st.markdown("🔴 **نیروین**")
-        s3ni = st.text_input("سوپر    ", key="s3ni")
-        g3ni = st.text_input("درجه    ", key="g3ni")
+        s3ni = st.text_input("سوپر    ", key=f"{iter_prefix}s3ni")
+        g3ni = st.text_input("درجه    ", key=f"{iter_prefix}g3ni")
         st.write(f"جمع: {n(s3ni) + n(g3ni) if n(s3ni) + n(g3ni) > 0 else ''}")
         st.markdown("---")
         st.write(f"**جمع کل گ۳:** {n(s3ni) + n(g3ni)}")
 
 st.divider()
 
-# --- محاسبات آمار بذرها ---
+# --- محاسبات نهایی ---
 an_s = n(s1an) + n(s2an)
 an_g = n(g1an) + n(g2an)
 total_s_all = an_s + n(s1ra) + n(s2g2) + n(s3ni)
@@ -105,18 +106,24 @@ f1.metric("کل سوپر", total_s_all)
 f2.metric("کل درجه", total_g_all)
 f3.metric("جمع نهایی", total_s_all + total_g_all)
 
-# --- دکمه ثبت و خالی کردن فرم ---
+# --- عملیات ثبت ---
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
-        # شبیه‌سازی ثبت (کد گوگل‌شیت شما اینجا قرار می‌گیرد)
-        # updated_df = pd.concat([existing_data, new_data])
-        # conn.update(data=updated_df)
+        # کد ثبت در گوگل شیت
+        new_data = pd.DataFrame([{
+            "تاریخ": shamsi_str, "اندرومدا S": an_s, "راگاراک S": n(s1ra), "G20 S": n(s2g2), "نیروین S": n(s3ni)
+            # بقیه ستون‌ها را بر اساس شیت خود اینجا اضافه کنید
+        }])
         
-        # خالی کردن فیلدها در session_state
-        for k in keys:
-            st.session_state[k] = ""
-            
-        st.success("✅ اطلاعات با موفقیت ثبت شد.")
-        st.rerun() # بازنشانی صفحه
+        # ثبت در دیتابیس (گوگل شیت)
+        existing_data = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
+        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated_df)
+        
+        # --- جادوی پاک کردن فرم ---
+        st.session_state.form_iteration += 1 
+        st.success("✅ اطلاعات با موفقیت ثبت شد و فرم ریست گردید.")
+        st.rerun()
+        
     except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
+        st.error(f"خطا در اتصال به جدول: {e}")
