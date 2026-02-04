@@ -4,7 +4,7 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="داشبورد سداد فدک", page_icon="📊", layout="wide")
+st.set_page_config(page_title="داشبورد جامع سداد فدک", page_icon="📊", layout="wide")
 
 # استایل CSS برای گرافیک و حذف لوزی‌ها
 st.markdown("""
@@ -44,20 +44,18 @@ st.success(f"🗓️ تاریخ: {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها با بذرهای اصلی و جمع زیر هر بذر ---
+# --- بخش ورودی‌ها ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #e74c3c;">🏘️ گلخانه ۱</div>', unsafe_allow_html=True)
-        # اندرومدا ۱
         st.markdown("🔴 **بذر اندرومدا**")
         s1an = st.text_input("سوپر", key="s1an")
         g1an = st.text_input("درجه", key="g1an")
         t1an = n(s1an) + n(g1an)
         st.write(f"جمع: {t1an if t1an > 0 else ''}")
         st.markdown("---")
-        # راگاراک ۱
         st.markdown("🟡 **بذر راگاراک**")
         s1ra = st.text_input("سوپر ", key="s1ra")
         g1ra = st.text_input("درجه ", key="g1ra")
@@ -67,14 +65,12 @@ with col1:
 with col2:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #3498db;">🏘️ گلخانه ۲</div>', unsafe_allow_html=True)
-        # اندرومدا ۲
         st.markdown("🔴 **بذر اندرومدا**")
         s2an = st.text_input("سوپر  ", key="s2an")
         g2an = st.text_input("درجه  ", key="g2an")
         t2an = n(s2an) + n(g2an)
         st.write(f"جمع: {t2an if t2an > 0 else ''}")
         st.markdown("---")
-        # G20
         st.markdown("🔴 **بذر G20**")
         s2g2 = st.text_input("سوپر   ", key="s2g2")
         g2g2 = st.text_input("درجه   ", key="g2g2")
@@ -84,52 +80,67 @@ with col2:
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
-        # نیروین
         st.markdown("🔴 **بذر نیروین**")
         s3ni = st.text_input("سوپر    ", key="s3ni")
         g3ni = st.text_input("درجه    ", key="g3ni")
         t3ni = n(s3ni) + n(g3ni)
         st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
-        # فضای خالی برای توازن بصری
-        st.write("")
         st.write("")
         st.write("")
         st.write("")
 
-# --- محاسبات نهایی گزارش (اصلاح شده بر اساس بذرهای اصلی) ---
-# ۱. اندرومدا (گلخانه ۱ و ۲)
+# --- محاسبات تفکیکی آمار نهایی ---
+# اندرومدا (گ۱ و گ۲)
 an_s = n(s1an) + n(s2an)
 an_g = n(g1an) + n(g2an)
-
-# ۲. راگاراک (فقط گلخانه ۱)
+# راگاراک (گ۱)
 ra_s = n(s1ra)
 ra_g = n(g1ra)
+# G20 (گ۲)
+g20_s = n(s2g2)
+g20_g = n(g2g2)
+# نیروین (گ۳)
+ni_s = n(s3ni)
+ni_g = n(g3ni)
 
-# ۳. جمع کل تمام برداشت‌ها
-total_all_super = n(s1an) + n(s1ra) + n(s2an) + n(s2g2) + n(s3ni)
-total_all_grade = n(g1an) + n(g1ra) + n(g2an) + n(g2g2) + n(g3ni)
+# جمع کل نهایی
+total_s_all = an_s + ra_s + g20_s + ni_s
+total_g_all = an_g + ra_g + g20_g + ni_g
 
 st.divider()
-st.subheader("📊 آمار نهایی برداشت امروز")
-r1, r2, r3 = st.columns(3)
+st.subheader("📊 آمار نهایی برداشت (به تفکیک بذر)")
 
-with r1:
-    st.markdown("🟢 **بذر اندرومدا**")
-    st.write(f"جمع سوپر: {an_s}")
-    st.write(f"جمع درجه: {an_g}")
-    st.info(f"جمع سوپر و درجه: {an_s + an_g}")
+# ردیف اول آمار
+r1_c1, r1_c2 = st.columns(2)
+with r1_c1:
+    st.markdown("🟢 **بذر اندرومدا (کل)**")
+    st.write(f"جمع سوپر: {an_s} | جمع درجه: {an_g}")
+    st.info(f"جمع کل اندرومدا: {an_s + an_g}")
 
-with r2:
-    st.markdown("🟡 **بذر راگاراک**")
-    st.write(f"جمع سوپر: {ra_s}")
-    st.write(f"جمع درجه: {ra_g}")
-    st.info(f"جمع سوپر و درجه: {ra_s + ra_g}")
+with r1_c2:
+    st.markdown("🟡 **بذر راگاراک (کل)**")
+    st.write(f"جمع سوپر: {ra_s} | جمع درجه: {ra_g}")
+    st.info(f"جمع کل راگاراک: {ra_s + ra_g}")
 
-with r3:
-    st.markdown("🏆 **جمع کل نهایی (همه بذرها)**")
-    st.write(f"کل سوپر: {total_all_super}")
-    st.write(f"کل درجه: {total_all_grade}")
-    st.success(f"جمع نهایی کل: {total_all_super + total_all_grade}")
+# ردیف دوم آمار
+r2_c1, r2_c2 = st.columns(2)
+with r2_c1:
+    st.markdown("🟠 **بذر G20 (کل)**")
+    st.write(f"جمع سوپر: {g20_s} | جمع درجه: {g20_g}")
+    st.info(f"جمع کل G20: {g20_s + g20_g}")
+
+with r2_c2:
+    st.markdown("🔵 **بذر نیروین (کل)**")
+    st.write(f"جمع سوپر: {ni_s} | جمع درجه: {ni_g}")
+    st.info(f"جمع کل نیروین: {ni_s + ni_g}")
+
+# ردیف سوم - جمع کل نهایی
+st.markdown("---")
+st.markdown("<h3 style='text-align: center;'>🏆 جمع کل نهایی تمام بذرها</h3>", unsafe_allow_html=True)
+f1, f2, f3 = st.columns(3)
+f1.metric("کل سوپر", total_s_all)
+f2.metric("کل درجه", total_g_all)
+f3.metric("جمع نهایی (S+G)", total_s_all + total_g_all)
 
 st.divider()
 if st.button("🚀 ثبت اطلاعات در اکسل", use_container_width=True):
