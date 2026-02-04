@@ -3,10 +3,10 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# ۱. این خط باعث می‌شود برنامه از تمام پهنای مانیتور استفاده کند و کوچک نباشد
+# ۱. تنظیمات صفحه (حالت عریض برای بزرگ شدن برنامه)
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
-# استایل CSS (بدون تغییر در ابعاد، فقط برای زیبایی کادرها)
+# ۲. استایل CSS برای کادربندی
 st.markdown("""
     <style>
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
@@ -26,6 +26,7 @@ st.title("📊 مدیریت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
+# --- مدیریت ریست کردن فرم ---
 if 'form_iteration' not in st.session_state:
     st.session_state.form_iteration = 0
 
@@ -33,7 +34,7 @@ def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- بخش انتخاب تاریخ و روز هفته ---
+# --- بخش انتخاب تاریخ و محاسبه روز هفته ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 year = c_y.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -41,7 +42,7 @@ m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرد
 month = c_m.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
 day = c_d.selectbox("روز", range(1, 32), index=now.day-1)
 
-# پیدا کردن روز هفته
+# محاسبه دقیق روز هفته
 selected_date = jdatetime.date(year, month, day)
 shamsi_str = selected_date.strftime('%Y/%m/%d')
 weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
@@ -51,8 +52,9 @@ st.success(f"🗓️ تاریخ: {shamsi_str} ({day_name})")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌ها (با کلید داینامیک برای ریست شدن) ---
 iter_prefix = f"v_{st.session_state.form_iteration}_"
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -88,7 +90,7 @@ with col2:
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **نیروین**")
+        st.markdown("🔴 **بذر نیروین**")
         s3ni = st.text_input("سوپر    ", key=f"{iter_prefix}s3ni")
         g3ni = st.text_input("درجه    ", key=f"{iter_prefix}g3ni")
         st.write(f"جمع: {n(s3ni) + n(g3ni) if n(s3ni) + n(g3ni) > 0 else ''}")
@@ -97,10 +99,11 @@ with col3:
 
 st.divider()
 
-# --- محاسبات و ثبت ---
+# --- محاسبات نهایی ---
 an_s = n(s1an) + n(s2an)
+an_g = n(g1an) + n(g2an)
 total_s_all = an_s + n(s1ra) + n(s2g2) + n(s3ni)
-total_g_all = (n(g1an) + n(g2an)) + n(g1ra) + n(g2g2) + n(g3ni)
+total_g_all = an_g + n(g1ra) + n(g2g2) + n(g3ni)
 
 st.subheader("📊 آمار تولید بر اساس نوع بذر")
 f1, f2, f3 = st.columns(3)
@@ -108,14 +111,26 @@ f1.metric("کل سوپر", total_s_all)
 f2.metric("کل درجه", total_g_all)
 f3.metric("جمع نهایی", total_s_all + total_g_all)
 
+# --- عملیات ثبت ---
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
-        new_data = pd.DataFrame([{"تاریخ": shamsi_str, "روز": day_name, "جمع کل": total_s_all + total_g_all}])
+        new_data = pd.DataFrame([{
+            "تاریخ": shamsi_str, 
+            "روز": day_name,
+            "اندرومدا S": an_s, 
+            "راگاراک S": n(s1ra), 
+            "G20 S": n(s2g2), 
+            "نیروین S": n(s3ni),
+            "جمع کل": total_s_all + total_g_all
+        }])
+        
         existing_data = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
         updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
+        
         st.session_state.form_iteration += 1 
-        st.success("✅ اطلاعات ثبت شد.")
+        st.success(f"✅ اطلاعات روز {day_name} با موفقیت ثبت شد.")
         st.rerun()
+        
     except Exception as e:
-        st.error(f"خطا: {e}")
+        st.error(f"خطا در اتصال به جدول: {e}")
