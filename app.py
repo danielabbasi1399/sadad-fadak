@@ -9,43 +9,21 @@ st.set_page_config(page_title="داشبورد سداد فدک", page_icon="🌿"
 # استایل CSS برای گرافیک بالا
 st.markdown("""
     <style>
-    /* استایل کلی پس‌زمینه */
-    .main {
-        background-color: #f0f2f6;
-    }
-    /* استایل کارت‌های گلخانه */
+    .main { background-color: #f0f2f6; }
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
         background-color: white !important;
-        border: none !important;
         border-radius: 20px !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
         padding: 25px !important;
-        transition: transform 0.3s;
     }
-    /* استایل تیتر گلخانه‌ها */
     .gh-header {
-        font-size: 22px;
-        font-weight: bold;
-        margin-bottom: 15px;
-        padding: 10px;
-        border-radius: 10px;
-        text-align: center;
-        color: white;
+        font-size: 20px; font-weight: bold; margin-bottom: 15px;
+        padding: 10px; border-radius: 10px; text-align: center; color: white;
     }
-    /* دکمه ثبت مدرن */
     .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        height: 3em;
+        width: 100%; border-radius: 12px; height: 3em;
         background: linear-gradient(90deg, #1D976C 0%, #93F9B9 100%);
-        color: white;
-        font-weight: bold;
-        border: none;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 5px 15px rgba(29, 151, 108, 0.3);
+        color: white; font-weight: bold; border: none;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -58,7 +36,7 @@ def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- بخش انتخاب تاریخ ---
+# --- انتخاب تاریخ ---
 with st.expander("📅 تنظیم تاریخ"):
     now = jdatetime.datetime.now()
     c_y, c_m, c_d = st.columns(3)
@@ -83,51 +61,68 @@ col1, col2, col3 = st.columns(3)
 with col1:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #e74c3c;">🏘️ گلخانه ۱</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **بذر اندرومدا**")
+        st.markdown("🔴 **اندرومدا**")
         s1an = st.text_input("سوپر", key="s1an")
         g1an = st.text_input("درجه", key="g1an")
-        t1an = n(s1an) + n(g1an)
-        st.write(f"جمع: {t1an if t1an > 0 else ''}")
-        
-        st.divider()
-        st.markdown("🟡 **بذر راگاراک**")
+        st.markdown("---")
+        st.markdown("🟡 **راگاراک**")
         s1ra = st.text_input("سوپر", key="s1ra")
         g1ra = st.text_input("درجه", key="g1ra")
-        t1ra = n(s1ra) + n(g1ra)
-        st.write(f"جمع: {t1ra if t1ra > 0 else ''}")
 
 with col2:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #3498db;">🏘️ گلخانه ۲</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **بذر اندرومدا**")
+        st.markdown("🔴 **اندرومدا**")
         s2an = st.text_input("سوپر", key="s2an")
         g2an = st.text_input("درجه", key="g2an")
-        t2an = n(s2an) + n(g2an)
-        st.write(f"جمع: {t2an if t2an > 0 else ''}")
-        
-        st.divider()
-        st.markdown("🔴 **بذر G20**")
+        st.markdown("---")
+        st.markdown("🔴 **G20**")
         s2g2 = st.text_input("سوپر", key="s2g2")
         g2g2 = st.text_input("درجه", key="g2g2")
-        t2g2 = n(s2g2) + n(g2g2)
-        st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
 
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **بذر نیروین**")
+        st.markdown("🔴 **نیروین**")
         s3ni = st.text_input("سوپر", key="s3ni")
         g3ni = st.text_input("درجه", key="g3ni")
-        t3ni = n(s3ni) + n(g3ni)
-        st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
-        # توازن ارتفاع
-        st.write("")
-        st.write("")
-        st.write("")
+
+# --- محاسبه مقادیر کل ---
+total_s1 = n(s1an) + n(s1ra)
+total_g1 = n(g1an) + n(g1ra)
+
+total_s2 = n(s2an) + n(s2g2)
+total_g2 = n(g2an) + n(g2g2)
+
+total_s3 = n(s3ni)
+total_g3 = n(g3ni)
+
+st.divider()
+st.subheader("📊 آمار لحظه‌ای برداشت امروز (به تفکیک گلخانه)")
+
+m1, m2, m3 = st.columns(3)
+
+with m1:
+    st.markdown("**گلخانه ۱**")
+    st.write(f"💎 سوپر: {total_s1}")
+    st.write(f"🔸 درجه: {total_g1}")
+    st.info(f"📦 جمع کل گ۱: {total_s1 + total_g1}")
+
+with m2:
+    st.markdown("**گلخانه ۲**")
+    st.write(f"💎 سوپر: {total_s2}")
+    st.write(f"🔸 درجه: {total_g2}")
+    st.info(f"📦 جمع کل گ۲: {total_s2 + total_g2}")
+
+with m3:
+    st.markdown("**گلخانه ۳**")
+    st.write(f"💎 سوپر: {total_s3}")
+    st.write(f"🔸 درجه: {total_g3}")
+    st.info(f"📦 جمع کل گ۳: {total_s3 + total_g3}")
 
 st.divider()
 
-# دکمه ثبت مدرن
+# دکمه ثبت
 if st.button("🚀 ثبت نهایی در جدول"):
     new_data = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
@@ -145,7 +140,7 @@ if st.button("🚀 ثبت نهایی در جدول"):
         st.success("✅ اطلاعات با موفقیت ثبت شد.")
         st.cache_data.clear()
     except:
-        st.error("خطا در ثبت اطلاعات!")
+        st.error("خطا در ثبت!")
 
 st.subheader("📋 سوابق اخیر")
 st.dataframe(conn.read(worksheet="Sheet1", ttl=0).dropna(how="all"), use_container_width=True)
