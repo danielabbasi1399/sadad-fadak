@@ -4,7 +4,7 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="داشبورد جامع سداد فدک", page_icon="📊", layout="wide")
+st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
 # استایل CSS برای گرافیک و حذف لوزی‌ها
 st.markdown("""
@@ -19,9 +19,6 @@ st.markdown("""
         font-size: 18px; font-weight: bold; padding: 8px; 
         border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;
     }
-    .summary-text {
-        font-size: 14px; color: #555; font-weight: bold;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -33,7 +30,7 @@ def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- بخش تاریخ ---
+# --- بخش انتخاب تاریخ ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -43,7 +40,7 @@ with c_m:
 with c_d: day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
 shamsi_str = jdatetime.date(year, month, day).strftime('%Y/%m/%d')
-st.success(f"🗓️ تاریخ: {shamsi_str}")
+st.success(f"🗓️ تاریخ انتخابی: {shamsi_str}")
 
 st.divider()
 
@@ -53,15 +50,23 @@ col1, col2, col3 = st.columns(3)
 with col1:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #e74c3c;">🏘️ گلخانه ۱</div>', unsafe_allow_html=True)
+        # اندرومدا ۱
         st.markdown("🔴 **بذر اندرومدا**")
         s1an = st.text_input("سوپر", key="s1an")
         g1an = st.text_input("درجه", key="g1an")
+        t1an = n(s1an) + n(g1an)
+        st.write(f"جمع: {t1an if t1an > 0 else ''}") # جمع زیر بذر
+        
         st.markdown("---")
+        
+        # راگاراک ۱
         st.markdown("🟡 **بذر راگاراک**")
         s1ra = st.text_input("سوپر ", key="s1ra")
         g1ra = st.text_input("درجه ", key="g1ra")
+        t1ra = n(s1ra) + n(g1ra)
+        st.write(f"جمع: {t1ra if t1ra > 0 else ''}") # جمع زیر بذر
         
-        # --- خلاصه داخل کادر گلخانه ۱ ---
+        # خلاصه گلخانه ۱
         st.markdown("---")
         st.markdown("**📋 خلاصه تولید گلخانه ۱**")
         sum_s1 = n(s1an) + n(s1ra)
@@ -73,15 +78,23 @@ with col1:
 with col2:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #3498db;">🏘️ گلخانه ۲</div>', unsafe_allow_html=True)
+        # اندرومدا ۲
         st.markdown("🔴 **بذر اندرومدا**")
         s2an = st.text_input("سوپر  ", key="s2an")
         g2an = st.text_input("درجه  ", key="g2an")
+        t2an = n(s2an) + n(g2an)
+        st.write(f"جمع: {t2an if t2an > 0 else ''}") # جمع زیر بذر
+        
         st.markdown("---")
+        
+        # G20
         st.markdown("🔴 **بذر G20**")
         s2g2 = st.text_input("سوپر   ", key="s2g2")
         g2g2 = st.text_input("درجه   ", key="g2g2")
+        t2g2 = n(s2g2) + n(g2g2)
+        st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}") # جمع زیر بذر
         
-        # --- خلاصه داخل کادر گلخانه ۲ ---
+        # خلاصه گلخانه ۲
         st.markdown("---")
         st.markdown("**📋 خلاصه تولید گلخانه ۲**")
         sum_s2 = n(s2an) + n(s2g2)
@@ -93,11 +106,14 @@ with col2:
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
+        # نیروین
         st.markdown("🔴 **بذر نیروین**")
         s3ni = st.text_input("سوپر    ", key="s3ni")
         g3ni = st.text_input("درجه    ", key="g3ni")
+        t3ni = n(s3ni) + n(g3ni)
+        st.write(f"جمع: {t3ni if t3ni > 0 else ''}") # جمع زیر بذر
         
-        # --- خلاصه داخل کادر گلخانه ۳ ---
+        # خلاصه گلخانه ۳
         st.markdown("---")
         st.markdown("**📋 خلاصه تولید گلخانه ۳**")
         sum_s3 = n(s3ni)
@@ -105,10 +121,9 @@ with col3:
         st.write(f"جمع سوپر: {sum_s3}")
         st.write(f"جمع درجه: {sum_g3}")
         st.write(f"جمع کل گ۳: {sum_s3 + sum_g3}")
-        # توازن ارتفاع
-        st.write("")
+        st.write("") # توازن
 
-# --- محاسبات تفکیکی برای بخش پایین ---
+# --- محاسبات بخش آمار نهایی پایین صفحه ---
 an_s = n(s1an) + n(s2an)
 an_g = n(g1an) + n(g2an)
 ra_s = n(s1ra)
@@ -124,27 +139,14 @@ total_g_all = an_g + ra_g + g20_g + ni_g
 st.divider()
 st.subheader("📊 آمار تولید بر اساس نوع بذر")
 
-r1_c1, r1_c2 = st.columns(2)
-with r1_c1:
-    st.markdown("🟢 **بذر اندرومدا (کل)**")
-    st.write(f"جمع سوپر: {an_s} | جمع درجه: {an_g}")
-    st.info(f"جمع کل اندرومدا: {an_s + an_g}")
-
-with r1_c2:
-    st.markdown("🟡 **بذر راگاراک (کل)**")
-    st.write(f"جمع سوپر: {ra_s} | جمع درجه: {ra_g}")
-    st.info(f"جمع کل راگاراک: {ra_s + ra_g}")
-
-r2_c1, r2_c2 = st.columns(2)
-with r2_c1:
-    st.markdown("🟠 **بذر G20 (کل)**")
-    st.write(f"جمع سوپر: {g20_s} | جمع درجه: {g20_g}")
-    st.info(f"جمع کل G20: {g20_s + g20_g}")
-
-with r2_c2:
-    st.markdown("🔵 **بذر نیروین (کل)**")
-    st.write(f"جمع سوپر: {ni_s} | جمع درجه: {ni_g}")
-    st.info(f"جمع کل نیروین: {ni_s + ni_g}")
+# نمایش تفکیکی بذرها در دو ستون
+c1, c2 = st.columns(2)
+with c1:
+    st.info(f"🟢 اندرومدا | سوپر: {an_s} | درجه: {an_g} | کل: {an_s+an_g}")
+    st.warning(f"🟠 جی ۲۰ | سوپر: {g20_s} | درجه: {g20_g} | کل: {g20_s+g20_g}")
+with c2:
+    st.info(f"🟡 راگاراک | سوپر: {ra_s} | درجه: {ra_g} | کل: {ra_s+ra_g}")
+    st.warning(f"🔵 نیروین | سوپر: {ni_s} | درجه: {ni_g} | کل: {ni_s+ni_g}")
 
 st.markdown("---")
 st.markdown("<h3 style='text-align: center;'>🏆 جمع کل نهایی تمام بذرها</h3>", unsafe_allow_html=True)
