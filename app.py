@@ -14,7 +14,7 @@ def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- انتخاب تاریخ ---
+# --- بخش تاریخ ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -32,54 +32,55 @@ st.info(f"📅 {current_day} - {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌ها با دایره‌های رنگی ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.error("🏘️ گلخانه ۱")
     # اندرومدا ۱
-    st.subheader("🌶️ بذر اندرومدا")
+    st.markdown("🔴 **بذر اندرومدا**")
     s1an = st.text_input("سوپر", key="s1an", value="")
     g1an = st.text_input("درجه", key="g1an", value="")
     t1an = n(s1an) + n(g1an)
-    st.write(f"✅ جمع: {t1an if t1an > 0 else ''}")
+    st.write(f"🔹 جمع: {t1an if t1an > 0 else ''}")
     
     st.markdown("---")
-    # راگاراک ۱ (فلفل زرد)
-    st.subheader("🟡🫑 بذر راگاراک")
+    # راگاراک ۱
+    st.markdown("🟡 **بذر راگاراک**")
     s1ra = st.text_input("سوپر", key="s1ra", value="")
     g1ra = st.text_input("درجه", key="g1ra", value="")
     t1ra = n(s1ra) + n(g1ra)
-    st.write(f"✅ جمع: {t1ra if t1ra > 0 else ''}")
+    st.write(f"🔹 جمع: {t1ra if t1ra > 0 else ''}")
 
 with col2:
     st.info("🏘️ گلخانه ۲")
     # اندرومدا ۲
-    st.subheader("🌶️ بذر اندرومدا")
+    st.markdown("🔴 **بذر اندرومدا**")
     s2an = st.text_input("سوپر", key="s2an", value="")
     g2an = st.text_input("درجه", key="g2an", value="")
     t2an = n(s2an) + n(g2an)
-    st.write(f"✅ جمع: {t2an if t2an > 0 else ''}")
+    st.write(f"🔹 جمع: {t2an if t2an > 0 else ''}")
     
     st.markdown("---")
     # G20
-    st.subheader("🌶️ بذر G20")
+    st.markdown("🔴 **بذر G20**")
     s2g2 = st.text_input("سوپر", key="s2g2", value="")
     g2g2 = st.text_input("درجه", key="g2g2", value="")
     t2g2 = n(s2g2) + n(g2g2)
-    st.write(f"✅ جمع: {t2g2 if t2g2 > 0 else ''}")
+    st.write(f"🔹 جمع: {t2g2 if t2g2 > 0 else ''}")
 
 with col3:
     st.success("🏘️ گلخانه ۳")
     # نیروین
-    st.subheader("🌶️ بذر نیروین")
+    st.markdown("🔴 **بذر نیروین**")
     s3ni = st.text_input("سوپر", key="s3ni", value="")
     g3ni = st.text_input("درجه", key="g3ni", value="")
     t3ni = n(s3ni) + n(g3ni)
-    st.write(f"✅ جمع: {t3ni if t3ni > 0 else ''}")
+    st.write(f"🔹 جمع: {t3ni if t3ni > 0 else ''}")
 
 st.divider()
 
+# دکمه ثبت نهایی
 if st.button("🚀 ثبت نهایی در اکسل"):
     new_data = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
@@ -95,7 +96,7 @@ if st.button("🚀 ثبت نهایی در اکسل"):
         updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
         st.balloons()
-        st.success("✅ ثبت با موفقیت انجام شد.")
+        st.success("✅ اطلاعات با موفقیت ثبت شد.")
         st.cache_data.clear()
     except:
         st.error("خطا در ثبت اطلاعات!")
