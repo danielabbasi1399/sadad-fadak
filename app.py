@@ -19,6 +19,9 @@ st.markdown("""
         font-size: 18px; font-weight: bold; padding: 8px; 
         border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;
     }
+    .summary-text {
+        font-size: 14px; color: #555; font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,14 +56,19 @@ with col1:
         st.markdown("🔴 **بذر اندرومدا**")
         s1an = st.text_input("سوپر", key="s1an")
         g1an = st.text_input("درجه", key="g1an")
-        t1an = n(s1an) + n(g1an)
-        st.write(f"جمع: {t1an if t1an > 0 else ''}")
         st.markdown("---")
         st.markdown("🟡 **بذر راگاراک**")
         s1ra = st.text_input("سوپر ", key="s1ra")
         g1ra = st.text_input("درجه ", key="g1ra")
-        t1ra = n(s1ra) + n(g1ra)
-        st.write(f"جمع: {t1ra if t1ra > 0 else ''}")
+        
+        # --- خلاصه داخل کادر گلخانه ۱ ---
+        st.markdown("---")
+        st.markdown("**📋 خلاصه تولید گلخانه ۱**")
+        sum_s1 = n(s1an) + n(s1ra)
+        sum_g1 = n(g1an) + n(g1ra)
+        st.write(f"جمع سوپر: {sum_s1}")
+        st.write(f"جمع درجه: {sum_g1}")
+        st.write(f"جمع کل گ۱: {sum_s1 + sum_g1}")
 
 with col2:
     with st.container(border=True):
@@ -68,14 +76,19 @@ with col2:
         st.markdown("🔴 **بذر اندرومدا**")
         s2an = st.text_input("سوپر  ", key="s2an")
         g2an = st.text_input("درجه  ", key="g2an")
-        t2an = n(s2an) + n(g2an)
-        st.write(f"جمع: {t2an if t2an > 0 else ''}")
         st.markdown("---")
         st.markdown("🔴 **بذر G20**")
         s2g2 = st.text_input("سوپر   ", key="s2g2")
         g2g2 = st.text_input("درجه   ", key="g2g2")
-        t2g2 = n(s2g2) + n(g2g2)
-        st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
+        
+        # --- خلاصه داخل کادر گلخانه ۲ ---
+        st.markdown("---")
+        st.markdown("**📋 خلاصه تولید گلخانه ۲**")
+        sum_s2 = n(s2an) + n(s2g2)
+        sum_g2 = n(g2an) + n(g2g2)
+        st.write(f"جمع سوپر: {sum_s2}")
+        st.write(f"جمع درجه: {sum_g2}")
+        st.write(f"جمع کل گ۲: {sum_s2 + sum_g2}")
 
 with col3:
     with st.container(border=True):
@@ -83,13 +96,19 @@ with col3:
         st.markdown("🔴 **بذر نیروین**")
         s3ni = st.text_input("سوپر    ", key="s3ni")
         g3ni = st.text_input("درجه    ", key="g3ni")
-        t3ni = n(s3ni) + n(g3ni)
-        st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
-        st.write("")
-        st.write("")
+        
+        # --- خلاصه داخل کادر گلخانه ۳ ---
+        st.markdown("---")
+        st.markdown("**📋 خلاصه تولید گلخانه ۳**")
+        sum_s3 = n(s3ni)
+        sum_g3 = n(g3ni)
+        st.write(f"جمع سوپر: {sum_s3}")
+        st.write(f"جمع درجه: {sum_g3}")
+        st.write(f"جمع کل گ۳: {sum_s3 + sum_g3}")
+        # توازن ارتفاع
         st.write("")
 
-# --- محاسبات تفکیکی ---
+# --- محاسبات تفکیکی برای بخش پایین ---
 an_s = n(s1an) + n(s2an)
 an_g = n(g1an) + n(g2an)
 ra_s = n(s1ra)
@@ -103,7 +122,6 @@ total_s_all = an_s + ra_s + g20_s + ni_s
 total_g_all = an_g + ra_g + g20_g + ni_g
 
 st.divider()
-# تغییر نام بخش طبق درخواست شما
 st.subheader("📊 آمار تولید بر اساس نوع بذر")
 
 r1_c1, r1_c2 = st.columns(2)
