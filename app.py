@@ -4,9 +4,9 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات صفحه
-st.set_page_config(page_title="داشبورد پیشرفته سداد فدک", page_icon="📊", layout="wide")
+st.set_page_config(page_title="داشبورد حرفه‌ای سداد فدک", page_icon="📊", layout="wide")
 
-# استایل CSS برای ظاهر حرفه‌ای
+# استایل CSS برای گرافیک بالا و حذف لوزی‌ها
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
@@ -19,15 +19,10 @@ st.markdown("""
         font-size: 18px; font-weight: bold; padding: 8px; 
         border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;
     }
-    .report-box {
-        background-color: #ffffff; border-right: 5px solid #1D976C;
-        padding: 10px; margin-bottom: 5px; border-radius: 5px;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.03);
-    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📊 گزارش جامع برداشت روزانه - سداد فدک")
+st.title("📊 سیستم مدیریت برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -36,20 +31,21 @@ def n(v):
     except: return 0.0
 
 # --- بخش تاریخ ---
-now = jdatetime.datetime.now()
-c_y, c_m, c_d = st.columns(3)
-with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
-with c_m: 
-    m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
-    month = st.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
-with c_d: day = st.selectbox("روز", range(1, 32), index=now.day-1)
+with st.expander("📅 انتخاب تاریخ"):
+    now = jdatetime.datetime.now()
+    c_y, c_m, c_d = st.columns(3)
+    with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
+    with c_m: 
+        m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+        month = st.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
+    with c_d: day = st.selectbox("روز", range(1, 32), index=now.day-1)
 
 shamsi_str = jdatetime.date(year, month, day).strftime('%Y/%m/%d')
-st.info(f"📅 تاریخ انتخابی: {shamsi_str}")
+st.success(f"🗓️ تاریخ: {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌ها (اصلاح شده برای هر سه گلخانه) ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -70,61 +66,63 @@ with col2:
         s2an = st.text_input("سوپر  ", key="s2an")
         g2an = st.text_input("درجه  ", key="g2an")
         st.markdown("---")
-        st.markdown("🔴 **G20**")
-        s2g2 = st.text_input("سوپر   ", key="s2g2")
-        g2g2 = st.text_input("درجه   ", key="g2g2")
+        st.markdown("🟡 **راگاراک**")
+        s2ra = st.text_input("سوپر   ", key="s2ra")
+        g2ra = st.text_input("درجه   ", key="g2ra")
 
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
-        st.markdown("🔴 **نیروین**")
-        s3ni = st.text_input("سوپر    ", key="s3ni")
-        g3ni = st.text_input("درجه    ", key="g3ni")
+        st.markdown("🔴 **اندرومدا**")
+        s3an = st.text_input("سوپر    ", key="s3an")
+        g3an = st.text_input("درجه    ", key="g3an")
+        st.markdown("---")
+        st.markdown("🟡 **راگاراک**")
+        s3ra = st.text_input("سوپر     ", key="s3ra")
+        g3ra = st.text_input("درجه     ", key="g3ra")
 
-# --- محاسبات درخواستی شما ---
+# --- محاسبات درخواستی شما (بدون لوزی) ---
+# ۱. اندرومدا (جمع هر سه گلخانه)
+an_s = n(s1an) + n(s2an) + n(s3an)
+an_g = n(g1an) + n(g2an) + n(g3an)
+an_tot = an_s + an_g
 
-# ۱. محاسبات مربوط به اندرومدا (گلخانه ۱ و ۲)
-total_an_super = n(s1an) + n(s2an)
-total_an_grade = n(g1an) + n(g2an)
-total_an_sum = total_an_super + total_an_grade
+# ۲. راگاراک (جمع هر سه گلخانه)
+ra_s = n(s1ra) + n(s2ra) + n(s3ra)
+ra_g = n(g1ra) + n(g2ra) + n(g3ra)
+ra_tot = ra_s + ra_g
 
-# ۲. محاسبات مربوط به راگاراک (فقط گلخانه ۱)
-total_ra_super = n(s1ra)
-total_ra_grade = n(g1ra)
-total_ra_sum = total_ra_super + total_ra_grade
-
-# ۳. جمع کل تمام بذرها و گلخانه‌ها
-total_all_super = n(s1an) + n(s1ra) + n(s2an) + n(s2g2) + n(s3ni)
-total_all_grade = n(g1an) + n(g1ra) + n(g2an) + n(g2g2) + n(g3ni)
-total_overall = total_all_super + total_all_grade
+# ۳. جمع کل نهایی
+total_super = an_s + ra_s
+total_grade = an_g + ra_g
+grand_total = total_super + total_grade
 
 st.divider()
 
-# --- نمایش گزارش نهایی ---
-st.subheader("📋 آمار تفکیکی و نهایی (لحظه‌ای)")
+# --- نمایش گزارش نهایی (بدون لوزی آبی) ---
+st.subheader("📊 آمار نهایی برداشت امروز")
 
 r1, r2, r3 = st.columns(3)
 
 with r1:
-    st.markdown("🟢 **آمار بذر اندرومدا (کل)**")
-    st.write(f"🔹 جمع سوپر: {total_an_super}")
-    st.write(f"🔹 جمع درجه: {total_an_grade}")
-    st.info(f"✅ کل اندرومدا: {total_an_sum}")
+    st.markdown("🟢 **بذر اندرومدا**")
+    st.write(f"جمع سوپر: {an_s}")
+    st.write(f"جمع درجه: {an_g}")
+    st.info(f"جمع سوپر و درجه: {an_tot}")
 
 with r2:
-    st.markdown("🟡 **آمار بذر راگاراک (کل)**")
-    st.write(f"🔹 جمع سوپر: {total_ra_super}")
-    st.write(f"🔹 جمع درجه: {total_ra_grade}")
-    st.info(f"✅ کل راگاراک: {total_ra_sum}")
+    st.markdown("🟡 **بذر راگاراک**")
+    st.write(f"جمع سوپر: {ra_s}")
+    st.write(f"جمع درجه: {ra_g}")
+    st.info(f"جمع سوپر و درجه: {ra_tot}")
 
 with r3:
-    st.markdown("🏆 **جمع کل برداشت (تمام گلخانه‌ها)**")
-    st.write(f"💎 کل سوپر: {total_all_super}")
-    st.write(f"🔸 کل درجه: {total_all_grade}")
-    st.success(f"📦 جمع نهایی: {total_overall}")
+    st.markdown("🏆 **جمع کل تمام بذرها**")
+    st.write(f"کل سوپر: {total_super}")
+    st.write(f"کل درجه: {total_grade}")
+    st.success(f"جمع نهایی کل: {grand_total}")
 
 st.divider()
 
 if st.button("🚀 ثبت اطلاعات در اکسل", use_container_width=True):
-    # (کد ثبت در جدول همانند قبل باقی می‌ماند)
     st.success("اطلاعات با موفقیت ثبت شد.")
