@@ -9,7 +9,7 @@ st.title("ثبت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# تابع تبدیل متن به عدد (فقط برای محاسبات)
+# تابع تبدیل متن به عدد
 def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
@@ -37,69 +37,39 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.error("🏘️ گلخانه ۱")
+    # اندرومدا
     st.write("**اندرومدا**")
     s1an = st.text_input("سوپر", key="s1an", value="")
     g1an = st.text_input("درجه", key="g1an", value="")
-    # فقط اگر عددی وارد شده باشد، جمع را نشان بده
-    if s1an.strip() or g1an.strip():
-        total = n(s1an) + n(g1an)
-        if total > 0: st.success(f"جمع: {total}")
+    total1an = n(s1an) + n(g1an)
+    st.write(f"🔹 جمع: {total1an if total1an > 0 else ''}")
     
     st.markdown("---")
+    # راگاراک
     st.write("**راگاراک**")
     s1ra = st.text_input("سوپر", key="s1ra", value="")
     g1ra = st.text_input("درجه", key="g1ra", value="")
-    if s1ra.strip() or g1ra.strip():
-        total = n(s1ra) + n(g1ra)
-        if total > 0: st.success(f"جمع: {total}")
+    total1ra = n(s1ra) + n(g1ra)
+    st.write(f"🔹 جمع: {total1ra if total1ra > 0 else ''}")
 
 with col2:
     st.info("🏘️ گلخانه ۲")
+    # اندرومدا
     st.write("**اندرومدا**")
     s2an = st.text_input("سوپر", key="s2an", value="")
     g2an = st.text_input("درجه", key="g2an", value="")
-    if s2an.strip() or g2an.strip():
-        total = n(s2an) + n(g2an)
-        if total > 0: st.success(f"جمع: {total}")
+    total2an = n(s2an) + n(g2an)
+    st.write(f"🔹 جمع: {total2an if total2an > 0 else ''}")
     
     st.markdown("---")
+    # G20
     st.write("**G20**")
     s2g2 = st.text_input("سوپر", key="s2g2", value="")
     g2g2 = st.text_input("درجه", key="g2g2", value="")
-    if s2g2.strip() or g2g2.strip():
-        total = n(s2g2) + n(g2g2)
-        if total > 0: st.success(f"جمع: {total}")
+    total2g2 = n(s2g2) + n(g2g2)
+    st.write(f"🔹 جمع: {total2g2 if total2g2 > 0 else ''}")
 
 with col3:
     st.success("🏘️ گلخانه ۳")
-    st.write("**نیروین**")
-    s3ni = st.text_input("سوپر", key="s3ni", value="")
-    g3ni = st.text_input("درجه", key="g3ni", value="")
-    if s3ni.strip() or g3ni.strip():
-        total = n(s3ni) + n(g3ni)
-        if total > 0: st.success(f"جمع: {total}")
-
-st.divider()
-
-if st.button("🚀 ثبت نهایی در اکسل"):
-    new_data = pd.DataFrame([{
-        "تاریخ": shamsi_str, "روز هفته": current_day,
-        "اندرومدا ۱ (S)": n(s1an), "اندرومدا ۱ (G)": n(g1an),
-        "راگاراک ۱ (S)": n(s1ra), "راگاراک ۱ (G)": n(g1ra),
-        "اندرومدا ۲ (S)": n(s2an), "اندرومدا ۲ (G)": n(g2an),
-        "G20 2 (S)": n(s2g2), "G20 2 (G)": n(g2g2),
-        "نیروین ۳ (S)": n(s3ni), "نیروین ۳ (G)": n(g3ni)
-    }])
-    
-    try:
-        existing_data = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
-        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.balloons()
-        st.success("✅ با موفقیت ثبت شد.")
-        st.cache_data.clear()
-    except:
-        st.error("خطا در ثبت!")
-
-st.subheader("📋 سوابق")
-st.dataframe(conn.read(worksheet="Sheet1", ttl=0).dropna(how="all"), use_container_width=True)
+    # نیروین
+    st.write("**نیروین**
