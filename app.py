@@ -4,17 +4,30 @@ import pandas as pd
 import jdatetime
 
 # تنظیمات اصلی
-st.set_page_config(page_title="سداد فدک", page_icon="🫑", layout="wide")
-st.title("ثبت هوشمند برداشت - سداد فدک")
+st.set_page_config(page_title="مدیریت سداد فدک", page_icon="🫑", layout="wide")
+
+# استایل اختصاصی برای خوشگل‌تر شدن کادرها
+st.markdown("""
+    <style>
+    .gh-box {
+        border: 2px solid #e6e9ef;
+        border-radius: 15px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        margin-bottom: 20px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🌱 ثبت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# تابع تبدیل متن به عدد
 def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
 
-# --- بخش تاریخ ---
+# --- انتخاب تاریخ ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 with c_y: year = st.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -32,55 +45,66 @@ st.info(f"📅 {current_day} - {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌ها با کادربندی جداگانه ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.error("🏘️ گلخانه ۱")
-    # اندرومدا ۱
-    st.markdown("🔴 **بذر اندرومدا**")
-    s1an = st.text_input("سوپر", key="s1an", value="")
-    g1an = st.text_input("درجه", key="g1an", value="")
-    t1an = n(s1an) + n(g1an)
-    st.write(f"جمع: {t1an if t1an > 0 else ''}") # همیشه کلمه جمع هست، عدد فقط وقتی بیشتر از صفر باشد
-    
-    st.markdown("---")
-    # راگاراک ۱
-    st.markdown("🟡 **بذر راگاراک**")
-    s1ra = st.text_input("سوپر", key="s1ra", value="")
-    g1ra = st.text_input("درجه", key="g1ra", value="")
-    t1ra = n(s1ra) + n(g1ra)
-    st.write(f"جمع: {t1ra if t1ra > 0 else ''}")
+    with st.container(border=True): # دور گلخانه ۱ خط می‌کشد
+        st.error("🏘️ گلخانه ۱")
+        # اندرومدا ۱
+        st.markdown("🔴 **بذر اندرومدا**")
+        s1an = st.text_input("سوپر", key="s1an")
+        g1an = st.text_input("درجه", key="g1an")
+        t1an = n(s1an) + n(g1an)
+        st.write(f"جمع: {t1an if t1an > 0 else ''}")
+        
+        st.divider()
+        
+        # راگاراک ۱
+        st.markdown("🟡 **بذر راگاراک**")
+        s1ra = st.text_input("سوپر", key="s1ra")
+        g1ra = st.text_input("درجه", key="g1ra")
+        t1ra = n(s1ra) + n(g1ra)
+        st.write(f"جمع: {t1ra if t1ra > 0 else ''}")
 
 with col2:
-    st.info("🏘️ گلخانه ۲")
-    # اندرومدا ۲
-    st.markdown("🔴 **بذر اندرومدا**")
-    s2an = st.text_input("سوپر", key="s2an", value="")
-    g2an = st.text_input("درجه", key="g2an", value="")
-    t2an = n(s2an) + n(g2an)
-    st.write(f"جمع: {t2an if t2an > 0 else ''}")
-    
-    st.markdown("---")
-    # G20
-    st.markdown("🔴 **بذر G20**")
-    s2g2 = st.text_input("سوپر", key="s2g2", value="")
-    g2g2 = st.text_input("درجه", key="g2g2", value="")
-    t2g2 = n(s2g2) + n(g2g2)
-    st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
+    with st.container(border=True): # دور گلخانه ۲ خط می‌کشد
+        st.info("🏘️ گلخانه ۲")
+        # اندرومدا ۲
+        st.markdown("🔴 **بذر اندرومدا**")
+        s2an = st.text_input("سوپر", key="s2an")
+        g2an = st.text_input("درجه", key="g2an")
+        t2an = n(s2an) + n(g2an)
+        st.write(f"جمع: {t2an if t2an > 0 else ''}")
+        
+        st.divider()
+        
+        # G20
+        st.markdown("🔴 **بذر G20**")
+        s2g2 = st.text_input("سوپر", key="s2g2")
+        g2g2 = st.text_input("درجه", key="g2g2")
+        t2g2 = n(s2g2) + n(g2g2)
+        st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
 
 with col3:
-    st.success("🏘️ گلخانه ۳")
-    # نیروین
-    st.markdown("🔴 **بذر نیروین**")
-    s3ni = st.text_input("سوپر", key="s3ni", value="")
-    g3ni = st.text_input("درجه", key="g3ni", value="")
-    t3ni = n(s3ni) + n(g3ni)
-    st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
+    with st.container(border=True): # دور گلخانه ۳ خط می‌کشد
+        st.success("🏘️ گلخانه ۳")
+        # نیروین
+        st.markdown("🔴 **بذر نیروین**")
+        s3ni = st.text_input("سوپر", key="s3ni")
+        g3ni = st.text_input("درجه", key="g3ni")
+        t3ni = n(s3ni) + n(g3ni)
+        st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
+        
+        # جای خالی برای توازن بصری
+        st.write("")
+        st.write("")
+        st.write("")
 
 st.divider()
 
-if st.button("🚀 ثبت نهایی در اکسل"):
+# دکمه ثبت
+if st.button("🚀 ثبت نهایی اطلاعات", use_container_width=True):
     new_data = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
         "اندرومدا ۱ (S)": n(s1an), "اندرومدا ۱ (G)": n(g1an),
@@ -95,10 +119,10 @@ if st.button("🚀 ثبت نهایی در اکسل"):
         updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
         st.balloons()
-        st.success("✅ اطلاعات با موفقیت ثبت شد.")
+        st.success("✅ اطلاعات با موفقیت در جدول ثبت شد.")
         st.cache_data.clear()
     except:
-        st.error("خطا در ثبت!")
+        st.error("خطا در ثبت! لطفاً دسترسی جدول را چک کنید.")
 
-st.subheader("📋 سوابق")
+st.subheader("📋 سوابق ثبت شده")
 st.dataframe(conn.read(worksheet="Sheet1", ttl=0).dropna(how="all"), use_container_width=True)
