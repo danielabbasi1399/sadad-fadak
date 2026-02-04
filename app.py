@@ -3,12 +3,13 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
+# تنظیمات اصلی
 st.set_page_config(page_title="سداد فدک", page_icon="🌶️", layout="wide")
 st.title("ثبت هوشمند برداشت - سداد فدک")
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# تابع کمکی تبدیل متن به عدد
+# تابع تبدیل متن به عدد (فقط برای محاسبات)
 def n(v):
     try: return float(v) if v.strip() else 0.0
     except: return 0.0
@@ -31,7 +32,7 @@ st.info(f"📅 {current_day} - {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها (خارج از فرم برای محاسبه آنی) ---
+# --- بخش ورودی‌ها ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -39,35 +40,47 @@ with col1:
     st.write("**اندرومدا**")
     s1an = st.text_input("سوپر", key="s1an", value="")
     g1an = st.text_input("درجه", key="g1an", value="")
-    st.code(f"جمع: {n(s1an) + n(g1an)}") # نمایش جمع آنی
+    # فقط اگر عددی وارد شده باشد، جمع را نشان بده
+    if s1an.strip() or g1an.strip():
+        total = n(s1an) + n(g1an)
+        if total > 0: st.success(f"جمع: {total}")
     
+    st.markdown("---")
     st.write("**راگاراک**")
     s1ra = st.text_input("سوپر", key="s1ra", value="")
     g1ra = st.text_input("درجه", key="g1ra", value="")
-    st.code(f"جمع: {n(s1ra) + n(g1ra)}")
+    if s1ra.strip() or g1ra.strip():
+        total = n(s1ra) + n(g1ra)
+        if total > 0: st.success(f"جمع: {total}")
 
 with col2:
     st.info("🏘️ گلخانه ۲")
     st.write("**اندرومدا**")
     s2an = st.text_input("سوپر", key="s2an", value="")
     g2an = st.text_input("درجه", key="g2an", value="")
-    st.code(f"جمع: {n(s2an) + n(g2an)}")
+    if s2an.strip() or g2an.strip():
+        total = n(s2an) + n(g2an)
+        if total > 0: st.success(f"جمع: {total}")
     
+    st.markdown("---")
     st.write("**G20**")
     s2g2 = st.text_input("سوپر", key="s2g2", value="")
     g2g2 = st.text_input("درجه", key="g2g2", value="")
-    st.code(f"جمع: {n(s2g2) + n(g2g2)}")
+    if s2g2.strip() or g2g2.strip():
+        total = n(s2g2) + n(g2g2)
+        if total > 0: st.success(f"جمع: {total}")
 
 with col3:
     st.success("🏘️ گلخانه ۳")
     st.write("**نیروین**")
     s3ni = st.text_input("سوپر", key="s3ni", value="")
     g3ni = st.text_input("درجه", key="g3ni", value="")
-    st.code(f"جمع: {n(s3ni) + n(g3ni)}")
+    if s3ni.strip() or g3ni.strip():
+        total = n(s3ni) + n(g3ni)
+        if total > 0: st.success(f"جمع: {total}")
 
 st.divider()
 
-# دکمه ثبت (جداگانه)
 if st.button("🚀 ثبت نهایی در اکسل"):
     new_data = pd.DataFrame([{
         "تاریخ": shamsi_str, "روز هفته": current_day,
@@ -86,7 +99,7 @@ if st.button("🚀 ثبت نهایی در اکسل"):
         st.success("✅ با موفقیت ثبت شد.")
         st.cache_data.clear()
     except:
-        st.error("خطا در اتصال به گوگل‌شیت")
+        st.error("خطا در ثبت!")
 
-st.subheader("📋 سوابق اخیر")
+st.subheader("📋 سوابق")
 st.dataframe(conn.read(worksheet="Sheet1", ttl=0).dropna(how="all"), use_container_width=True)
