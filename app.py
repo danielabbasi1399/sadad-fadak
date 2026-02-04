@@ -44,21 +44,21 @@ st.success(f"🗓️ تاریخ: {shamsi_str}")
 
 st.divider()
 
-# --- بخش ورودی‌ها با جمع اختصاصی زیر هر بذر ---
+# --- بخش ورودی‌ها با بذرهای اصلی و جمع زیر هر بذر ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #e74c3c;">🏘️ گلخانه ۱</div>', unsafe_allow_html=True)
         # اندرومدا ۱
-        st.markdown("🔴 **اندرومدا**")
+        st.markdown("🔴 **بذر اندرومدا**")
         s1an = st.text_input("سوپر", key="s1an")
         g1an = st.text_input("درجه", key="g1an")
         t1an = n(s1an) + n(g1an)
         st.write(f"جمع: {t1an if t1an > 0 else ''}")
         st.markdown("---")
         # راگاراک ۱
-        st.markdown("🟡 **راگاراک**")
+        st.markdown("🟡 **بذر راگاراک**")
         s1ra = st.text_input("سوپر ", key="s1ra")
         g1ra = st.text_input("درجه ", key="g1ra")
         t1ra = n(s1ra) + n(g1ra)
@@ -68,41 +68,46 @@ with col2:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #3498db;">🏘️ گلخانه ۲</div>', unsafe_allow_html=True)
         # اندرومدا ۲
-        st.markdown("🔴 **اندرومدا**")
+        st.markdown("🔴 **بذر اندرومدا**")
         s2an = st.text_input("سوپر  ", key="s2an")
         g2an = st.text_input("درجه  ", key="g2an")
         t2an = n(s2an) + n(g2an)
         st.write(f"جمع: {t2an if t2an > 0 else ''}")
         st.markdown("---")
-        # راگاراک ۲
-        st.markdown("🟡 **راگاراک**")
-        s2ra = st.text_input("سوپر   ", key="s2ra")
-        g2ra = st.text_input("درجه   ", key="g2ra")
-        t2ra = n(s2ra) + n(g2ra)
-        st.write(f"جمع: {t2ra if t2ra > 0 else ''}")
+        # G20
+        st.markdown("🔴 **بذر G20**")
+        s2g2 = st.text_input("سوپر   ", key="s2g2")
+        g2g2 = st.text_input("درجه   ", key="g2g2")
+        t2g2 = n(s2g2) + n(g2g2)
+        st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
 
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
-        # اندرومدا ۳
-        st.markdown("🔴 **اندرومدا**")
-        s3an = st.text_input("سوپر    ", key="s3an")
-        g3an = st.text_input("درجه    ", key="g3an")
-        t3an = n(s3an) + n(g3an)
-        st.write(f"جمع: {t3an if t3an > 0 else ''}")
-        st.markdown("---")
-        # راگاراک ۳
-        st.markdown("🟡 **راگاراک**")
-        s3ra = st.text_input("سوپر     ", key="s3ra")
-        g3ra = st.text_input("درجه     ", key="g3ra")
-        t3ra = n(s3ra) + n(g3ra)
-        st.write(f"جمع: {t3ra if t3ra > 0 else ''}")
+        # نیروین
+        st.markdown("🔴 **بذر نیروین**")
+        s3ni = st.text_input("سوپر    ", key="s3ni")
+        g3ni = st.text_input("درجه    ", key="g3ni")
+        t3ni = n(s3ni) + n(g3ni)
+        st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
+        # فضای خالی برای توازن بصری
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
 
-# --- محاسبات نهایی گزارش ---
-an_s = n(s1an) + n(s2an) + n(s3an)
-an_g = n(g1an) + n(g2an) + n(g3an)
-ra_s = n(s1ra) + n(s2ra) + n(s3ra)
-ra_g = n(g1ra) + n(g2ra) + n(g3ra)
+# --- محاسبات نهایی گزارش (اصلاح شده بر اساس بذرهای اصلی) ---
+# ۱. اندرومدا (گلخانه ۱ و ۲)
+an_s = n(s1an) + n(s2an)
+an_g = n(g1an) + n(g2an)
+
+# ۲. راگاراک (فقط گلخانه ۱)
+ra_s = n(s1ra)
+ra_g = n(g1ra)
+
+# ۳. جمع کل تمام برداشت‌ها
+total_all_super = n(s1an) + n(s1ra) + n(s2an) + n(s2g2) + n(s3ni)
+total_all_grade = n(g1an) + n(g1ra) + n(g2an) + n(g2g2) + n(g3ni)
 
 st.divider()
 st.subheader("📊 آمار نهایی برداشت امروز")
@@ -121,11 +126,11 @@ with r2:
     st.info(f"جمع سوپر و درجه: {ra_s + ra_g}")
 
 with r3:
-    st.markdown("🏆 **جمع کل نهایی**")
-    st.write(f"کل سوپر: {an_s + ra_s}")
-    st.write(f"کل درجه: {an_g + ra_g}")
-    st.success(f"جمع نهایی کل: {an_s + ra_s + an_g + ra_g}")
+    st.markdown("🏆 **جمع کل نهایی (همه بذرها)**")
+    st.write(f"کل سوپر: {total_all_super}")
+    st.write(f"کل درجه: {total_all_grade}")
+    st.success(f"جمع نهایی کل: {total_all_super + total_all_grade}")
 
 st.divider()
 if st.button("🚀 ثبت اطلاعات در اکسل", use_container_width=True):
-    st.success("اطلاعات با موفقیت ثبت شد.")
+    st.success("✅ اطلاعات با موفقیت ثبت شد.")
