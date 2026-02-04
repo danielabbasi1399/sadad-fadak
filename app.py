@@ -42,7 +42,7 @@ with col1:
     s1an = st.text_input("سوپر", key="s1an", value="")
     g1an = st.text_input("درجه", key="g1an", value="")
     t1an = n(s1an) + n(g1an)
-    if t1an > 0: st.write(f"جمع: {t1an}") # مربع آبی کاملا حذف شد
+    st.write(f"جمع: {t1an if t1an > 0 else ''}") # همیشه کلمه جمع هست، عدد فقط وقتی بیشتر از صفر باشد
     
     st.markdown("---")
     # راگاراک ۱
@@ -50,7 +50,7 @@ with col1:
     s1ra = st.text_input("سوپر", key="s1ra", value="")
     g1ra = st.text_input("درجه", key="g1ra", value="")
     t1ra = n(s1ra) + n(g1ra)
-    if t1ra > 0: st.write(f"جمع: {t1ra}")
+    st.write(f"جمع: {t1ra if t1ra > 0 else ''}")
 
 with col2:
     st.info("🏘️ گلخانه ۲")
@@ -59,7 +59,7 @@ with col2:
     s2an = st.text_input("سوپر", key="s2an", value="")
     g2an = st.text_input("درجه", key="g2an", value="")
     t2an = n(s2an) + n(g2an)
-    if t2an > 0: st.write(f"جمع: {t2an}")
+    st.write(f"جمع: {t2an if t2an > 0 else ''}")
     
     st.markdown("---")
     # G20
@@ -67,7 +67,7 @@ with col2:
     s2g2 = st.text_input("سوپر", key="s2g2", value="")
     g2g2 = st.text_input("درجه", key="g2g2", value="")
     t2g2 = n(s2g2) + n(g2g2)
-    if t2g2 > 0: st.write(f"جمع: {t2g2}")
+    st.write(f"جمع: {t2g2 if t2g2 > 0 else ''}")
 
 with col3:
     st.success("🏘️ گلخانه ۳")
@@ -76,7 +76,7 @@ with col3:
     s3ni = st.text_input("سوپر", key="s3ni", value="")
     g3ni = st.text_input("درجه", key="g3ni", value="")
     t3ni = n(s3ni) + n(g3ni)
-    if t3ni > 0: st.write(f"جمع: {t3ni}")
+    st.write(f"جمع: {t3ni if t3ni > 0 else ''}")
 
 st.divider()
 
