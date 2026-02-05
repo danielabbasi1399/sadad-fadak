@@ -3,10 +3,10 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# ۱. تنظیمات صفحه
+# ۱. تنظیمات صفحه برای پهنای کامل
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
-# ۲. استایل CSS
+# ۲. استایل CSS برای کادربندی و رنگ‌ها
 st.markdown("""
     <style>
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
@@ -33,24 +33,25 @@ def n(v):
     try: return float(v.strip()) if v and v.strip() else 0.0
     except: return 0.0
 
-# --- بخش انتخاب تاریخ (۱ بهمن = چهارشنبه) ---
-now = jdatetime.datetime.now()
+# --- بخش انتخاب تاریخ (تنظیم دقیق: ۱ بهمن ۱۴۰۴ = چهارشنبه) ---
 c_y, c_m, c_d = st.columns(3)
 year = c_y.selectbox("سال", [1403, 1404, 1405], index=1)
 m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
-month = c_m.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
-day = c_d.selectbox("روز", range(1, 32), index=now.day-1)
+month = c_m.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=10) # پیش‌فرض بهمن
+day = c_d.selectbox("روز", range(1, 32), index=0) # پیش‌فرض اول ماه
 
 selected_date = jdatetime.date(year, month, day)
 shamsi_str = selected_date.strftime('%Y/%m/%d')
+
+# با این ترتیب، متد .weekday() برای ۱ بهمن ۱۴۰۴ عدد ۲ را برمی‌گرداند که معادل چهارشنبه است
 weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
 day_name = weekdays[selected_date.weekday()]
 
-st.success(f"🗓️ تاریخ: {shamsi_str} ({day_name})")
+st.success(f"🗓️ تاریخ شمسی: {shamsi_str} ({day_name})")
 
 st.divider()
 
-# --- بخش ورودی‌ها ---
+# --- بخش ورودی‌های تفکیک شده ---
 iter_prefix = f"v_{st.session_state.form_iteration}_"
 col1, col2, col3 = st.columns(3)
 
@@ -80,45 +81,40 @@ with col3:
 
 st.divider()
 
-# محاسبات نهایی
+# محاسبات کل تولید
 total_s = n(s1an_s) + n(s1ra_s) + n(s2an_s) + n(s2g2_s) + n(s3ni_s)
 total_g = n(s1an_g) + n(s1ra_g) + n(s2an_g) + n(s2g2_g) + n(s3ni_g)
+grand_total = total_s + total_g
 
-st.subheader("📊 آمار کل امروز")
+st.subheader("📊 آمار نهایی تولید")
 f1, f2, f3 = st.columns(3)
-f1.metric("کل سوپر", total_s)
-f2.metric("کل درجه", total_g)
-f3.metric("جمع نهایی", total_s + total_g)
+f1.metric("کل سوپر (kg)", total_s)
+f2.metric("کل درجه (kg)", total_g)
+f3.metric("جمع نهایی (kg)", grand_total)
 
-# --- اصلاحیه بخش ثبت اطلاعات ---
+# --- عملیات ثبت کامل در گوگل شیت ---
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
-        # در اینجا نام تمام ستون‌هایی که می‌خواهید در اکسل بیاید را تعریف می‌کنیم
-        data_to_save = {
+        all_data = {
             "تاریخ": shamsi_str,
             "روز هفته": day_name,
-            "گ۱ اندرومدا سوپر": n(s1an_s),
-            "گ۱ اندرومدا درجه": n(s1an_g),
-            "گ۱ راگاراک سوپر": n(s1ra_s),
-            "گ۱ راگاراک درجه": n(s1ra_g),
-            "گ۲ اندرومدا سوپر": n(s2an_s),
-            "گ۲ اندرومدا درجه": n(s2an_g),
-            "گ۲ G20 سوپر": n(s2g2_s),
-            "گ۲ G20 درجه": n(s2g2_g),
-            "گ۳ نیروین سوپر": n(s3ni_s),
-            "گ۳ نیروین درجه": n(s3ni_g),
-            "کل سوپر": total_s,
-            "کل درجه": total_g,
-            "جمع کل نهایی": total_s + total_g
+            "گ۱ اندرومدا سوپر": n(s1an_s), "گ۱ اندرومدا درجه": n(s1an_g),
+            "گ۱ راگاراک سوپر": n(s1ra_s), "گ۱ راگاراک درجه": n(s1ra_g),
+            "گ۲ اندرومدا سوپر": n(s2an_s), "گ۲ اندرومدا درجه": n(s2an_g),
+            "گ۲ G20 سوپر": n(s2g2_s), "گ۲ G20 درجه": n(s2g2_g),
+            "گ۳ نیروین سوپر": n(s3ni_s), "گ۳ نیروین درجه": n(s3ni_g),
+            "جمع کل سوپر": total_s,
+            "جمع کل درجه": total_g,
+            "جمع نهایی نهایی": grand_total
         }
         
-        new_row = pd.DataFrame([data_to_save])
+        new_row = pd.DataFrame([all_data])
         df = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
         updated_df = pd.concat([df, new_row], ignore_index=True)
         conn.update(worksheet="Sheet1", data=updated_df)
         
         st.session_state.form_iteration += 1 
-        st.success("✅ تمامی اطلاعات با موفقیت در گوگل‌شیت ثبت شد.")
+        st.success(f"✅ اطلاعات روز {day_name} با تمام جزئیات ذخیره شد.")
         st.rerun()
     except Exception as e:
-        st.error(f"خطا در ثبت: {e}")
+        st.error(f"خطا در ارتباط با گوگل شیت: {e}")
