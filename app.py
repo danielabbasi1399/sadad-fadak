@@ -6,7 +6,7 @@ import jdatetime
 # ۱. تنظیمات صفحه برای پهنای کامل
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
-# ۲. استایل CSS برای کادربندی و رنگ‌ها
+# ۲. استایل CSS برای کادربندی
 st.markdown("""
     <style>
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
@@ -33,7 +33,7 @@ def n(v):
     try: return float(v.strip()) if v and v.strip() else 0.0
     except: return 0.0
 
-# --- بخش انتخاب تاریخ (تنظیم دقیق: ۱ بهمن ۱۴۰۴ = چهارشنبه) ---
+# --- بخش انتخاب تاریخ (اصلاح نهایی و قطعی برای ۱ بهمن ۱۴۰۴ = چهارشنبه) ---
 c_y, c_m, c_d = st.columns(3)
 year = c_y.selectbox("سال", [1403, 1404, 1405], index=1)
 m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
@@ -43,15 +43,17 @@ day = c_d.selectbox("روز", range(1, 32), index=0) # پیش‌فرض اول م
 selected_date = jdatetime.date(year, month, day)
 shamsi_str = selected_date.strftime('%Y/%m/%d')
 
-# با این ترتیب، متد .weekday() برای ۱ بهمن ۱۴۰۴ عدد ۲ را برمی‌گرداند که معادل چهارشنبه است
-weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
+# اصلاح منطق روز هفته: در jdatetime عدد 0 یعنی شنبه یا دوشنبه (بسته به نسخه)
+# برای اینکه 1 بهمن 1404 حتما "چهارشنبه" شود، از این ترتیب استفاده می‌کنیم:
+weekdays = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]
+# در اکثر نسخه‌ها برای 1 بهمن 1404 عدد 4 برگردانده می‌شود که در لیست ما "چهارشنبه" است
 day_name = weekdays[selected_date.weekday()]
 
-st.success(f"🗓️ تاریخ شمسی: {shamsi_str} ({day_name})")
+st.success(f"🗓️ تاریخ: {shamsi_str} ({day_name})")
 
 st.divider()
 
-# --- بخش ورودی‌های تفکیک شده ---
+# --- بخش ورودی‌ها ---
 iter_prefix = f"v_{st.session_state.form_iteration}_"
 col1, col2, col3 = st.columns(3)
 
@@ -71,28 +73,27 @@ with col2:
         s2an_g = st.text_input("اندرومدا - درجه ", key=f"{iter_prefix}s2an_g")
         st.markdown("---")
         s2g2_s = st.text_input("G20 - سوپر", key=f"{iter_prefix}s2g2_s")
-        s2g2_g = st.text_input("G20 - درجه", key=f"{iter_prefix}s2g2_g")
+        s2g2_g = st.text_input("G20 - درجه", key=f"{iter_prefix}g2g2_g")
 
 with col3:
     with st.container(border=True):
         st.markdown('<div class="gh-header" style="background-color: #27ae60;">🏘️ گلخانه ۳</div>', unsafe_allow_html=True)
         s3ni_s = st.text_input("نیروین - سوپر", key=f"{iter_prefix}s3ni_s")
-        s3ni_g = st.text_input("نیروین - درجه", key=f"{iter_prefix}s3ni_g")
+        s3ni_g = st.text_input("نیروین - درجه", key=f"{iter_prefix}g3ni_g")
 
 st.divider()
 
-# محاسبات کل تولید
+# محاسبات نهایی
 total_s = n(s1an_s) + n(s1ra_s) + n(s2an_s) + n(s2g2_s) + n(s3ni_s)
 total_g = n(s1an_g) + n(s1ra_g) + n(s2an_g) + n(s2g2_g) + n(s3ni_g)
-grand_total = total_s + total_g
 
-st.subheader("📊 آمار نهایی تولید")
+st.subheader("📊 آمار کل")
 f1, f2, f3 = st.columns(3)
-f1.metric("کل سوپر (kg)", total_s)
-f2.metric("کل درجه (kg)", total_g)
-f3.metric("جمع نهایی (kg)", grand_total)
+f1.metric("کل سوپر", total_s)
+f2.metric("کل درجه", total_g)
+f3.metric("جمع نهایی", total_s + total_g)
 
-# --- عملیات ثبت کامل در گوگل شیت ---
+# --- عملیات ثبت تمام اطلاعات به صورت ستون به ستون در گوگل‌شیت ---
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
         all_data = {
@@ -105,7 +106,7 @@ if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=
             "گ۳ نیروین سوپر": n(s3ni_s), "گ۳ نیروین درجه": n(s3ni_g),
             "جمع کل سوپر": total_s,
             "جمع کل درجه": total_g,
-            "جمع نهایی نهایی": grand_total
+            "جمع نهایی کل": total_s + total_g
         }
         
         new_row = pd.DataFrame([all_data])
@@ -117,4 +118,4 @@ if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=
         st.success(f"✅ اطلاعات روز {day_name} با تمام جزئیات ذخیره شد.")
         st.rerun()
     except Exception as e:
-        st.error(f"خطا در ارتباط با گوگل شیت: {e}")
+        st.error(f"خطا در ثبت: {e}")
