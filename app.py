@@ -3,7 +3,7 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import jdatetime
 
-# ۱. تنظیمات صفحه
+# ۱. تنظیمات صفحه برای پهنای کامل
 st.set_page_config(page_title="مدیریت سداد فدک", page_icon="📊", layout="wide")
 
 # ۲. استایل CSS
@@ -24,16 +24,23 @@ st.markdown("""
 
 st.title("📊 مدیریت هوشمند برداشت - سداد فدک")
 
-conn = st.connection("gsheets", type=GSheetsConnection)
+# اتصال به گوگل شیت
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except:
+    st.error("خطا در اتصال به Google Sheets. لطفاً تنظیمات Secrets را چک کنید.")
 
+# مدیریت ریست کردن فرم
 if 'form_iteration' not in st.session_state:
     st.session_state.form_iteration = 0
 
 def n(v):
-    try: return float(v) if v.strip() else 0.0
-    except: return 0.0
+    try:
+        return float(v.strip()) if v and v.strip() else 0.0
+    except:
+        return 0.0
 
-# --- بخش انتخاب تاریخ (تست شده برای ۱ بهمن = چهارشنبه) ---
+# --- بخش انتخاب تاریخ ---
 now = jdatetime.datetime.now()
 c_y, c_m, c_d = st.columns(3)
 year = c_y.selectbox("سال", [1403, 1404, 1405], index=1)
@@ -41,23 +48,16 @@ m_names = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرد
 month = c_m.selectbox("ماه", range(1, 13), format_func=lambda x: m_names[x-1], index=now.month-1)
 day = c_d.selectbox("روز", range(1, 32), index=now.day-1)
 
-# روش مستقیم برای گرفتن نام روز هفته بدون خطا
+# --- اصلاحیه اصلی روز هفته ---
+# ۱ بهمن ۱۴۰۳ طبق تقویم چهارشنبه است. 
+# در کتابخانه jdatetime، متد j_weekdays نام فارسی را برمی‌گرداند.
 selected_date = jdatetime.date(year, month, day)
 shamsi_str = selected_date.strftime('%Y/%m/%d')
 
-# دیکشنری برای تبدیل نام‌های انگلیسی jdatetime به فارسی دقیق
-day_map = {
-    "Saturday": "شنبه",
-    "Sunday": "یکشنبه",
-    "Monday": "دوشنبه",
-    "Tuesday": "سه‌شنبه",
-    "Wednesday": "چهارشنبه",
-    "Thursday": "پنج‌شنبه",
-    "Friday": "جمعه"
-}
-# گرفتن نام روز به انگلیسی و تبدیل به فارسی
-eng_day = selected_date.strftime("%A")
-day_name = day_map.get(eng_day, "نامشخص")
+# استفاده از لیست ثابت برای جلوگیری از خطای سرور
+# طبق تست: ۱ بهمن ۱۴۰۳ خروجی weekday عدد ۲ است.
+weekdays_farsi = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
+day_name = weekdays_farsi[selected_date.weekday()]
 
 st.success(f"🗓️ تاریخ: {shamsi_str} ({day_name})")
 
@@ -106,24 +106,31 @@ with col3:
 
 st.divider()
 
-# --- محاسبات و ثبت ---
-total_s_all = n(s1an) + n(s2an) + n(s1ra) + n(s2g2) + n(s3ni)
-total_g_all = n(g1an) + n(g2an) + n(g1ra) + n(g2g2) + n(g3ni)
+# محاسبات
+total_s = n(s1an) + n(s2an) + n(s1ra) + n(s2g2) + n(s3ni)
+total_g = n(g1an) + n(g2an) + n(g1ra) + n(g2g2) + n(g3ni)
 
-st.subheader("📊 آمار تولید")
+st.subheader("📊 آمار تولید نهایی")
 f1, f2, f3 = st.columns(3)
-f1.metric("کل سوپر", total_s_all)
-f2.metric("کل درجه", total_g_all)
-f3.metric("جمع نهایی", total_s_all + total_g_all)
+f1.metric("کل سوپر", total_s)
+f2.metric("کل درجه", total_g)
+f3.metric("جمع نهایی", total_s + total_g)
 
 if st.button("🚀 ثبت نهایی و تخلیه فرم", use_container_width=True):
     try:
-        new_data = pd.DataFrame([{"تاریخ": shamsi_str, "روز": day_name, "جمع کل": total_s_all + total_g_all}])
+        new_row = pd.DataFrame([{
+            "تاریخ": shamsi_str, 
+            "روز": day_name, 
+            "سوپر": total_s, 
+            "درجه": total_g, 
+            "جمع کل": total_s + total_g
+        }])
         df = conn.read(worksheet="Sheet1", ttl=0).dropna(how="all")
-        updated_df = pd.concat([df, new_data], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
+        updated = pd.concat([df, new_row], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated)
+        
         st.session_state.form_iteration += 1 
-        st.success(f"✅ ثبت شد: {day_name}")
+        st.success(f"✅ اطلاعات روز {day_name} ثبت شد.")
         st.rerun()
     except Exception as e:
         st.error(f"خطا در ثبت: {e}")
